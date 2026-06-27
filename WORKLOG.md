@@ -100,3 +100,9 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 - AWAITING Mejiro RoomEditModal.tsx -> write file -> npm run build -> screenshot-verify lobby teacher controls -> commit M4e.
 - Then remaining: M4g QR codes (if feasible), M4h quick-grade/status card. M4b/M4c/M4d already covered by Teio's ClassroomManagerClient (UI present; runtime click-test still pending).
 - DEPLOY reminder: build LOCALLY, start node .next/standalone/server.js; keep GAS app (projects/homework) as fallback.
+
+## 2026-06-27 (cont) — FULL-APP FIDELITY AUDIT requested
+- Trainer: "ยังมีปัญหาอีกเยอะที่ยังไม่เหมือนเดิม" -> wants Rudolf to audit EVERY screen vs GAS original across the whole app. Chose: Rudolf self-audits all pages.
+- Done this session before audit: M4e (room edit/dup + RoomEditModal), M4f (reports), /reports rail link, leaderboard spacing -> space-y-3 (12px), teacher login verified (4-way test pass), teacher acct = krutaktan/taktan888 (test kru deleted), Mejiro budget-watch in glm-run.py (warn 9999N). Heads: 75b... build green.
+- AUDIT PLAN: compare React (src/app/*) vs GAS source (../homework/src/{index.html,CSS.html,JS.html} render fns) screen-by-screen: (1) Lobby (2) Room/grading + score modal (3) Reports. Reference render exists: scratch/gas-real.png (lobby). Dev server :3000 up; teacher cookie mintable via SESSION_SECRET in .env. Chrome headless for screenshots.
+- NEXT: dispatch audit -> produce punch list -> fix top items -> screenshot-verify -> commit per screen.

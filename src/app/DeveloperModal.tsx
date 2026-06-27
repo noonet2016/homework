@@ -86,31 +86,34 @@ export default function DeveloperModal() {
                     ผู้พัฒนาระบบติดตามงานนักเรียน
                   </p>
 
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-3">
-                    <a
-                      href="tel:0810750101"
-                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/80 hover:bg-violet-50 border border-white/80 shadow-sm text-sm text-slate-700 hover:text-violet-700 font-bold transition-all"
-                    >
-                      <i className="fa-solid fa-phone text-violet-500" /> 081-0750101
-                    </a>
-                    <a
-                      href="https://line.me/ti/p/234Hq-ydr1"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/80 hover:bg-[#06C755]/10 border border-white/80 shadow-sm text-sm text-slate-700 hover:text-[#06C755] font-bold transition-all"
-                    >
-                      <i className="fa-brands fa-line text-[#06C755] text-lg" /> TAKTANSRI
-                    </a>
-                    <a
-                      href="https://www.facebook.com/taktan.torapic"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/80 hover:bg-[#1877F2]/10 border border-white/80 shadow-sm text-sm text-slate-700 hover:text-[#1877F2] font-bold transition-all"
-                    >
-                      <i className="fa-brands fa-facebook text-[#1877F2] text-lg" /> Facebook
-                    </a>
-                  </div>
+                  {/* Phone — full-width button under the name (inside the card) */}
+                  <a
+                    href="tel:0810750101"
+                    className="flex items-center justify-center gap-2 w-full px-3.5 py-3 rounded-2xl bg-white/80 hover:bg-violet-50 border border-white/80 shadow-sm text-base text-slate-700 hover:text-violet-700 font-bold transition-all"
+                  >
+                    <i className="fa-solid fa-phone text-violet-500" /> 081-0750101
+                  </a>
                 </div>
+              </div>
+
+              {/* LINE + Facebook — two columns below the card */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <a
+                  href="https://line.me/ti/p/234Hq-ydr1"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-3.5 py-4 rounded-2xl bg-white/80 hover:bg-[#06C755]/10 border border-white/80 shadow-sm text-sm text-slate-700 hover:text-[#06C755] font-bold transition-all"
+                >
+                  <i className="fa-brands fa-line text-[#06C755] text-lg" /> TAKTANSRI
+                </a>
+                <a
+                  href="https://www.facebook.com/taktan.torapic"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-3.5 py-4 rounded-2xl bg-white/80 hover:bg-[#1877F2]/10 border border-white/80 shadow-sm text-sm text-slate-700 hover:text-[#1877F2] font-bold transition-all"
+                >
+                  <i className="fa-brands fa-facebook text-[#1877F2] text-lg" /> Facebook
+                </a>
               </div>
             </div>
           </div>

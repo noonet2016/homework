@@ -73,7 +73,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                 name="username"
                 placeholder="ชื่อผู้ใช้"
                 autoFocus
-                defaultValue="kru"
+                defaultValue="krutaktan"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5"
               />
               <input

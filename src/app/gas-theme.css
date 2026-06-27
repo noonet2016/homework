@@ -143,3 +143,13 @@
   .shadow-xl, .shadow-2xl, .shadow-lg { box-shadow: none !important; }
   tr { page-break-inside: avoid; }
 }
+
+/* ===== Global footer credit (heartbeat) — match GAS ===== */
+@keyframes pulse-heart {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.animate-heart {
+  display: inline-block;
+  animation: pulse-heart 1.2s infinite;
+}

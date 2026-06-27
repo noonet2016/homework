@@ -29,29 +29,29 @@ type StudentGridClientProps = {
 };
 
 function getStatusIcon(pending: number) {
-  if (pending > 2) return <i className="fa-solid fa-triangle-exclamation mini-icon" />;
-  if (pending > 0) return <i className="fa-solid fa-hourglass-half mini-icon" />;
-  return <i className="fa-solid fa-circle-check mini-icon" />;
+  if (pending > 2) return <i className="fa-solid fa-triangle-exclamation mini-icon text-rose-500" />;
+  if (pending > 0) return <i className="fa-solid fa-hourglass-half mini-icon text-blue-400" />;
+  return <i className="fa-solid fa-circle-check mini-icon text-emerald-500" />;
 }
 
 function getRankBadge(index: number) {
   if (index === 0) {
     return (
       <>
-        <i className="fa-solid fa-crown mini-icon" /> MVP
+        <i className="fa-solid fa-crown mini-icon text-amber-400" /> MVP
       </>
     );
   }
   if (index < 3) {
     return (
       <>
-        <i className="fa-solid fa-medal mini-icon" /> Top
+        <i className="fa-solid fa-medal mini-icon text-amber-400" /> Top
       </>
     );
   }
   return (
     <>
-      <i className="fa-solid fa-bullseye mini-icon" /> Player
+      <i className="fa-solid fa-bullseye mini-icon text-blue-500" /> Player
     </>
   );
 }

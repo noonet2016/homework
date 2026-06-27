@@ -76,7 +76,7 @@ export default async function Home() {
                 <i className="fa-solid fa-house" />
               </span>
               <Link href="/reports" className="rail-btn fa-btn" title="รายงานความก้าวหน้า">
-                <i className="fa-solid fa-chart-line" />
+                <i className="fa-solid fa-chart-simple" />
               </Link>
               <span className="rail-btn fa-btn" title="คู่มือการใช้งาน">
                 <i className="fa-solid fa-book-open" />

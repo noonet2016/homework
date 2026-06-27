@@ -3,36 +3,9 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createStudent } from "@/lib/actions/students";
 import { createTask } from "@/lib/actions/tasks";
-import StudentScoreModal from "./StudentScoreModal";
+import StudentGridClient, { type StudentCardData, type TaskData } from "./StudentGridClient";
 
 export const dynamic = "force-dynamic";
-
-type RoomStudent = {
-  id: string;
-  name: string;
-  nickname: string | null;
-  number: number | null;
-  code: string | null;
-  scores: { taskId: string; value: number }[];
-};
-
-type StudentSummary = RoomStudent & {
-  total: number;
-  done: number;
-  pending: number;
-};
-
-function getStatusIcon(pending: number) {
-  if (pending === 0) return "✅";
-  if (pending <= 2) return "⏳";
-  return "⚠️";
-}
-
-function getRankBadge(index: number) {
-  if (index === 0) return "👑 MVP";
-  if (index < 3) return "🏅 Top";
-  return "🎯 Player";
-}
 
 export default async function RoomPage({
   params,
@@ -67,74 +40,118 @@ export default async function RoomPage({
 
   if (!room) notFound();
 
-  const taskCount = room.tasks.length;
-  const students: StudentSummary[] = room.students
+  const tasks: TaskData[] = room.tasks.map((task) => ({
+    id: task.id,
+    name: task.name,
+    taskIndex: task.taskIndex,
+  }));
+  const taskCount = tasks.length;
+
+  const students: StudentCardData[] = room.students
     .map((student) => {
-      const total = student.scores.reduce((sum, score) => sum + score.value, 0);
-      const done = student.scores.filter((score) => score.value > 0).length;
+      const scores = tasks.map((task) => {
+        const score = student.scores.find((item) => item.taskId === task.id);
+        return {
+          taskId: task.id,
+          value: score?.value ?? 0,
+        };
+      });
+      const totalScore = scores.reduce((sum, score) => sum + score.value, 0);
+      const tasksCompleted = scores.filter((score) => score.value > 0).length;
 
       return {
-        ...student,
-        total,
-        done,
-        pending: Math.max(taskCount - done, 0),
+        id: student.id,
+        name: student.name,
+        nickname: student.nickname,
+        number: student.number,
+        code: student.code,
+        scores,
+        totalScore,
+        tasksCompleted,
+        pending: Math.max(taskCount - tasksCompleted, 0),
       };
     })
     .sort((a, b) => {
-      if (b.total !== a.total) return b.total - a.total;
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER);
     });
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#f0f9ff_0%,#e0f2fe_50%,#bae6fd_100%)] px-4 py-6 text-slate-700 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+    <section id="student-grid-container" className="min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-full bg-white/85 px-4 py-2 text-sm font-bold text-indigo-600 shadow-[0_10px_25px_rgba(92,108,143,0.12)] ring-1 ring-[#e9eef7] transition hover:-translate-y-0.5 hover:text-indigo-700"
+              className="w-11 h-11 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-sm fa-btn shrink-0 grid place-items-center"
+              title="กลับหน้าโฮม"
             >
-              <span aria-hidden="true">←</span>
-              กลับหน้าโฮม
+              <i className="fa-solid fa-arrow-left" />
             </Link>
-            <h1 className="mt-4 text-3xl font-bold text-[#1f2e53]">
-              <span className="mr-2">{room.icon}</span>
+            <h2 id="class-title" className="text-2xl sm:text-3xl font-bold truncate">
+              <span className="mr-2">{room.icon || "🧩"}</span>
               {room.name}
-            </h1>
+            </h2>
           </div>
 
-          <div className="w-full max-w-md">
+          <div className="hidden md:flex flex-1 max-w-sm mr-4 relative group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i className="fa-solid fa-magnifying-glass text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+            </div>
             <input
-              type="search"
+              type="text"
+              id="student-search-input"
+              className="block w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
               placeholder="ค้นหาชื่อ, ชื่อเล่น หรือเลขที่..."
-              className="w-full rounded-2xl border border-[#e4e9ff] bg-white/90 px-4 py-3 text-sm font-medium shadow-[0_10px_25px_rgba(92,108,143,0.12)] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              form="student-grid-search-form"
+              name="studentSearch"
             />
           </div>
-        </header>
 
-        <section className="mb-8 grid gap-3 rounded-3xl border border-[#e9eef7] bg-white/75 p-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] md:grid-cols-2">
+          <div className="flex items-center gap-2">
+            <span className="hidden md:inline text-sm font-semibold text-slate-500">
+              กลับหน้าโฮม
+            </span>
+          </div>
+        </div>
+
+        <div className="md:hidden mb-5 relative group">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <i className="fa-solid fa-magnifying-glass text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+          </div>
+          <input
+            type="text"
+            id="student-search-input-mobile"
+            className="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-lg shadow-slate-100"
+            placeholder="ค้นหาชื่อ, ชื่อเล่น หรือเลขที่..."
+            form="student-grid-search-form"
+            name="studentSearchMobile"
+          />
+        </div>
+
+        <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm md:grid-cols-2">
           <form action={createStudent} className="flex flex-wrap gap-2">
             <input type="hidden" name="roomId" value={room.id} />
             <input
               name="number"
               placeholder="เลขที่"
               inputMode="numeric"
-              className="w-20 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              className="w-20 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
             />
             <input
               name="name"
               placeholder="ชื่อนักเรียน"
               required
-              className="min-w-40 flex-1 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              className="min-w-40 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
             />
             <input
               name="nickname"
               placeholder="ชื่อเล่น"
-              className="min-w-28 flex-1 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              className="min-w-28 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
             />
             <button
               type="submit"
-              className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-600 active:scale-95"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
             >
               เพิ่มนักเรียน
             </button>
@@ -146,82 +163,19 @@ export default async function RoomPage({
               name="name"
               placeholder="ชื่อใบงาน/ภาระงาน"
               required
-              className="min-w-48 flex-1 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+              className="min-w-48 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
             />
             <button
               type="submit"
-              className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-95"
+              className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"
             >
               เพิ่มงาน
             </button>
           </form>
-        </section>
+        </div>
 
-        {students.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#e4e9ff] bg-white/75 p-10 text-center text-slate-500 shadow-[0_10px_25px_rgba(92,108,143,0.12)]">
-            ยังไม่มีนักเรียนในห้องนี้
-          </div>
-        ) : (
-          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {students.map((student, index) => {
-              const progress = taskCount > 0 ? Math.round((student.done / taskCount) * 100) : 0;
-
-              return (
-                <StudentScoreModal
-                  key={student.id}
-                  roomId={room.id}
-                  student={student}
-                  tasks={room.tasks}
-                  trigger={
-                    <article className="h-full cursor-pointer rounded-3xl border border-[#e4e9ff] bg-gradient-to-br from-white to-[#f3f5ff] p-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(92,108,143,0.18)]">
-                      <div className="mb-4 flex items-center justify-between gap-2">
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#1f2e53] shadow-sm ring-1 ring-[#e9eef7]">
-                          {getRankBadge(index)}
-                        </span>
-                        <span className="text-lg" aria-hidden="true">
-                          {getStatusIcon(student.pending)}
-                        </span>
-                      </div>
-
-                      <h2 className="line-clamp-2 min-h-12 text-center text-base font-bold leading-6 text-[#1f2e53]">
-                        {student.name}
-                      </h2>
-                      <p className="mt-3 truncate text-center text-sm font-bold text-indigo-500">
-                        ชื่อเล่น: {student.nickname || "-"}
-                      </p>
-                      <p className="mt-1 text-center text-sm font-medium text-slate-500">
-                        เลขที่ {student.number ?? "-"}
-                      </p>
-
-                      <div className="my-5 text-center">
-                        <span className="text-2xl font-bold text-amber-500">
-                          {student.total}
-                        </span>
-                        <span className="ml-1 text-sm font-bold text-amber-500">คะแนน</span>
-                      </div>
-
-                      <div className="border-t border-[#e4e9ff] pt-3">
-                        <div className="mb-2 flex items-center justify-between gap-2 text-xs font-bold text-slate-500">
-                          <span>
-                            ส่งแล้ว {student.done}/{taskCount}
-                          </span>
-                          <span>ค้าง {student.pending} งาน</span>
-                        </div>
-                        <div className="h-2.5 overflow-hidden rounded-full bg-[#d9dff3]">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#60a5fa] to-[#a78bfa]"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    </article>
-                  }
-                />
-              );
-            })}
-          </section>
-        )}
+        <StudentGridClient roomId={room.id} students={students} tasks={tasks} />
       </div>
-    </main>
+    </section>
   );
 }

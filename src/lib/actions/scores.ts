@@ -21,3 +21,23 @@ export async function setScore(formData: FormData) {
   });
   revalidatePath(`/rooms/${roomId}`);
 }
+
+export async function saveStudentScores(
+  roomId: string,
+  studentId: string,
+  valuesByTaskId: Record<string, number>,
+) {
+  if (!roomId || !studentId) return;
+
+  await prisma.$transaction(
+    Object.entries(valuesByTaskId).map(([taskId, value]) =>
+      prisma.score.upsert({
+        where: { studentId_taskId: { studentId, taskId } },
+        create: { studentId, taskId, value: Number(value) || 0 },
+        update: { value: Number(value) || 0 },
+      }),
+    ),
+  );
+
+  revalidatePath(`/rooms/${roomId}`);
+}

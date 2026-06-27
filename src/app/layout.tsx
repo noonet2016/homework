@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import "./gas-theme.css";
+import { getSession } from "@/lib/auth";
+import TeacherAuthChip from "./TeacherAuthChip";
 
 const notoSansThai = Noto_Sans_Thai({
   variable: "--font-noto-thai",
@@ -14,9 +16,10 @@ export const metadata: Metadata = {
   description: "ระบบสำหรับบันทึกและติดตามคะแนนนักเรียนอย่างง่ายดาย",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { isTeacher } = await getSession();
   return (
     <html lang="th" className={`${notoSansThai.variable} h-full antialiased`}>
       <head>
@@ -25,7 +28,10 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <TeacherAuthChip isTeacher={isTeacher} />
+        {children}
+      </body>
     </html>
   );
 }

@@ -50,3 +50,11 @@ Open questions: subdomain name confirm; Plesk SSH access (got Permission denied 
 
 Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xamppfiles/htdocs/feed. Old GAS app at projects/homework (KEEP as live fallback, do not delete).
 ## ====================================================================
+
+## 2026-06-27 (resume)
+
+- Symboli Rudolf (Write/Bash): M3 CONTINUE — replicated proven Room slice to Students/Tasks/Scores. New server actions: src/lib/actions/students.ts (create/delete/rename), tasks.ts (create/delete/rename, auto taskIndex), scores.ts (setScore = upsert on compound key studentId_taskId, value=0 means not-done). New page src/app/rooms/[id]/page.tsx (force-dynamic, Next16 `params: Promise` + await): add/delete students+tasks + editable score grid (Enter to save each cell). Lobby rows now Link→/rooms/[id]. `npm run build` PASSED — route /rooms/[id]=ƒ dynamic, TS ok (confirms studentId_taskId key valid). Committed 8e6c943.
+
+### Next steps
+- Browser-test the full flow (npm run dev → add room → open room → add students/tasks → type scores). DB-write path proven by build typecheck; live UI click-through still pending.
+- M4: port GAS app UI styling/labels; M5: NextAuth teacher login + wire auth into every action (TODO(M5) markers present in all action files).

@@ -4,9 +4,11 @@
 // TODO(M5): every action must verify auth (session.user) before mutating.
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireTeacher } from "@/lib/auth";
 
 // Upsert a single grade cell. value=0 means "not done yet".
 export async function setScore(formData: FormData) {
+  await requireTeacher();
   const studentId = String(formData.get("studentId") ?? "");
   const taskId = String(formData.get("taskId") ?? "");
   const roomId = String(formData.get("roomId") ?? "");
@@ -27,6 +29,7 @@ export async function saveStudentScores(
   studentId: string,
   valuesByTaskId: Record<string, number>,
 ) {
+  await requireTeacher();
   if (!roomId || !studentId) return;
 
   await prisma.$transaction(

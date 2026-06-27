@@ -4,8 +4,10 @@
 // TODO(M5): every action must verify auth (session.user) before mutating.
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireTeacher } from "@/lib/auth";
 
 export async function createStudent(formData: FormData) {
+  await requireTeacher();
   const roomId = String(formData.get("roomId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!roomId || !name) return;
@@ -20,6 +22,7 @@ export async function createStudent(formData: FormData) {
 }
 
 export async function deleteStudent(formData: FormData) {
+  await requireTeacher();
   const id = String(formData.get("id") ?? "");
   const roomId = String(formData.get("roomId") ?? "");
   if (!id) return;
@@ -28,6 +31,7 @@ export async function deleteStudent(formData: FormData) {
 }
 
 export async function renameStudent(formData: FormData) {
+  await requireTeacher();
   const id = String(formData.get("id") ?? "");
   const roomId = String(formData.get("roomId") ?? "");
   const name = String(formData.get("name") ?? "").trim();

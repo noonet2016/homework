@@ -5,8 +5,10 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireTeacher } from "@/lib/auth";
 
 export async function createRoom(formData: FormData) {
+  await requireTeacher();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const icon = String(formData.get("icon") ?? "").trim() || "🧩";
@@ -24,6 +26,7 @@ export async function createRoom(formData: FormData) {
 }
 
 export async function deleteRoom(formData: FormData) {
+  await requireTeacher();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   await prisma.room.delete({ where: { id } });
@@ -31,6 +34,7 @@ export async function deleteRoom(formData: FormData) {
 }
 
 export async function renameRoom(formData: FormData) {
+  await requireTeacher();
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!id || !name) return;

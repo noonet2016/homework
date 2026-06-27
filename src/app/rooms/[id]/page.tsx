@@ -1,11 +1,38 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { createStudent, deleteStudent } from "@/lib/actions/students";
-import { createTask, deleteTask } from "@/lib/actions/tasks";
-import { setScore } from "@/lib/actions/scores";
+import { createStudent } from "@/lib/actions/students";
+import { createTask } from "@/lib/actions/tasks";
+import StudentScoreModal from "./StudentScoreModal";
 
 export const dynamic = "force-dynamic";
+
+type RoomStudent = {
+  id: string;
+  name: string;
+  nickname: string | null;
+  number: number | null;
+  code: string | null;
+  scores: { taskId: string; value: number }[];
+};
+
+type StudentSummary = RoomStudent & {
+  total: number;
+  done: number;
+  pending: number;
+};
+
+function getStatusIcon(pending: number) {
+  if (pending === 0) return "✅";
+  if (pending <= 2) return "⏳";
+  return "⚠️";
+}
+
+function getRankBadge(index: number) {
+  if (index === 0) return "👑 MVP";
+  if (index < 3) return "🏅 Top";
+  return "🎯 Player";
+}
 
 export default async function RoomPage({
   params,
@@ -17,137 +44,184 @@ export default async function RoomPage({
   const room = await prisma.room.findUnique({
     where: { id },
     include: {
-      students: { orderBy: [{ number: "asc" }, { name: "asc" }] },
-      tasks: { orderBy: { taskIndex: "asc" } },
+      students: {
+        include: {
+          scores: {
+            select: {
+              taskId: true,
+              value: true,
+            },
+          },
+        },
+      },
+      tasks: {
+        orderBy: { taskIndex: "asc" },
+        select: {
+          id: true,
+          name: true,
+          taskIndex: true,
+        },
+      },
     },
   });
+
   if (!room) notFound();
 
-  const scores = await prisma.score.findMany({
-    where: { task: { roomId: id } },
-  });
-  // key = `${studentId}:${taskId}` → value
-  const scoreMap = new Map<string, number>();
-  for (const s of scores) scoreMap.set(`${s.studentId}:${s.taskId}`, s.value);
+  const taskCount = room.tasks.length;
+  const students: StudentSummary[] = room.students
+    .map((student) => {
+      const total = student.scores.reduce((sum, score) => sum + score.value, 0);
+      const done = student.scores.filter((score) => score.value > 0).length;
+
+      return {
+        ...student,
+        total,
+        done,
+        pending: Math.max(taskCount - done, 0),
+      };
+    })
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      return (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER);
+    });
 
   return (
-    <main className="mx-auto max-w-5xl p-6 sm:p-10">
-      <Link href="/" className="text-sm text-indigo-600 hover:underline">
-        ← กลับหน้าห้องเรียน
-      </Link>
-      <h1 className="mb-6 mt-2 text-2xl font-bold">
-        <span className="mr-2">{room.icon}</span>
-        {room.name}
-      </h1>
+    <main className="min-h-screen bg-[linear-gradient(135deg,#f0f9ff_0%,#e0f2fe_50%,#bae6fd_100%)] px-4 py-6 text-slate-700 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-full bg-white/85 px-4 py-2 text-sm font-bold text-indigo-600 shadow-[0_10px_25px_rgba(92,108,143,0.12)] ring-1 ring-[#e9eef7] transition hover:-translate-y-0.5 hover:text-indigo-700"
+            >
+              <span aria-hidden="true">←</span>
+              กลับหน้าโฮม
+            </Link>
+            <h1 className="mt-4 text-3xl font-bold text-[#1f2e53]">
+              <span className="mr-2">{room.icon}</span>
+              {room.name}
+            </h1>
+          </div>
 
-      <div className="mb-8 grid gap-6 sm:grid-cols-2">
-        {/* Add student */}
-        <form action={createStudent} className="flex flex-wrap gap-2">
-          <input type="hidden" name="roomId" value={room.id} />
-          <input
-            name="number"
-            placeholder="เลขที่"
-            inputMode="numeric"
-            className="w-20 rounded-lg border px-2 py-2"
-          />
-          <input
-            name="name"
-            placeholder="ชื่อนักเรียน"
-            required
-            className="flex-1 rounded-lg border px-3 py-2"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
-          >
-            เพิ่มนักเรียน
-          </button>
-        </form>
+          <div className="w-full max-w-md">
+            <input
+              type="search"
+              placeholder="ค้นหาชื่อ, ชื่อเล่น หรือเลขที่..."
+              className="w-full rounded-2xl border border-[#e4e9ff] bg-white/90 px-4 py-3 text-sm font-medium shadow-[0_10px_25px_rgba(92,108,143,0.12)] outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+            />
+          </div>
+        </header>
 
-        {/* Add task */}
-        <form action={createTask} className="flex gap-2">
-          <input type="hidden" name="roomId" value={room.id} />
-          <input
-            name="name"
-            placeholder="ชื่อใบงาน/ภาระงาน"
-            required
-            className="flex-1 rounded-lg border px-3 py-2"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
-          >
-            เพิ่มงาน
-          </button>
-        </form>
-      </div>
+        <section className="mb-8 grid gap-3 rounded-3xl border border-[#e9eef7] bg-white/75 p-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] md:grid-cols-2">
+          <form action={createStudent} className="flex flex-wrap gap-2">
+            <input type="hidden" name="roomId" value={room.id} />
+            <input
+              name="number"
+              placeholder="เลขที่"
+              inputMode="numeric"
+              className="w-20 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+            />
+            <input
+              name="name"
+              placeholder="ชื่อนักเรียน"
+              required
+              className="min-w-40 flex-1 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+            />
+            <input
+              name="nickname"
+              placeholder="ชื่อเล่น"
+              className="min-w-28 flex-1 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-600 active:scale-95"
+            >
+              เพิ่มนักเรียน
+            </button>
+          </form>
 
-      {room.students.length === 0 || room.tasks.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-gray-500">
-          เพิ่มนักเรียนและงานอย่างน้อยอย่างละ 1 รายการเพื่อเริ่มให้คะแนน
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="sticky left-0 bg-white p-2 text-left">นักเรียน</th>
-                {room.tasks.map((t) => (
-                  <th key={t.id} className="min-w-24 p-2 align-bottom">
-                    <div className="font-medium">{t.name}</div>
-                    <form action={deleteTask}>
-                      <input type="hidden" name="id" value={t.id} />
-                      <input type="hidden" name="roomId" value={room.id} />
-                      <button className="text-xs text-red-400 hover:underline">
-                        ลบงาน
-                      </button>
-                    </form>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {room.students.map((st) => (
-                <tr key={st.id} className="border-t">
-                  <td className="sticky left-0 bg-white p-2">
-                    <span className="text-gray-400">{st.number ?? "·"}</span>{" "}
-                    {st.name}
-                    <form action={deleteStudent} className="inline">
-                      <input type="hidden" name="id" value={st.id} />
-                      <input type="hidden" name="roomId" value={room.id} />
-                      <button className="ml-2 text-xs text-red-400 hover:underline">
-                        ลบ
-                      </button>
-                    </form>
-                  </td>
-                  {room.tasks.map((t) => {
-                    const val = scoreMap.get(`${st.id}:${t.id}`) ?? 0;
-                    return (
-                      <td key={t.id} className="p-1 text-center">
-                        <form action={setScore}>
-                          <input type="hidden" name="studentId" value={st.id} />
-                          <input type="hidden" name="taskId" value={t.id} />
-                          <input type="hidden" name="roomId" value={room.id} />
-                          <input
-                            name="value"
-                            defaultValue={val || ""}
-                            placeholder="-"
-                            inputMode="numeric"
-                            className="w-14 rounded border px-1 py-1 text-center"
+          <form action={createTask} className="flex flex-wrap gap-2">
+            <input type="hidden" name="roomId" value={room.id} />
+            <input
+              name="name"
+              placeholder="ชื่อใบงาน/ภาระงาน"
+              required
+              className="min-w-48 flex-1 rounded-2xl border border-[#e4e9ff] bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-100"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-700 active:scale-95"
+            >
+              เพิ่มงาน
+            </button>
+          </form>
+        </section>
+
+        {students.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-[#e4e9ff] bg-white/75 p-10 text-center text-slate-500 shadow-[0_10px_25px_rgba(92,108,143,0.12)]">
+            ยังไม่มีนักเรียนในห้องนี้
+          </div>
+        ) : (
+          <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {students.map((student, index) => {
+              const progress = taskCount > 0 ? Math.round((student.done / taskCount) * 100) : 0;
+
+              return (
+                <StudentScoreModal
+                  key={student.id}
+                  roomId={room.id}
+                  student={student}
+                  tasks={room.tasks}
+                  trigger={
+                    <article className="h-full cursor-pointer rounded-3xl border border-[#e4e9ff] bg-gradient-to-br from-white to-[#f3f5ff] p-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(92,108,143,0.18)]">
+                      <div className="mb-4 flex items-center justify-between gap-2">
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#1f2e53] shadow-sm ring-1 ring-[#e9eef7]">
+                          {getRankBadge(index)}
+                        </span>
+                        <span className="text-lg" aria-hidden="true">
+                          {getStatusIcon(student.pending)}
+                        </span>
+                      </div>
+
+                      <h2 className="line-clamp-2 min-h-12 text-center text-base font-bold leading-6 text-[#1f2e53]">
+                        {student.name}
+                      </h2>
+                      <p className="mt-3 truncate text-center text-sm font-bold text-indigo-500">
+                        ชื่อเล่น: {student.nickname || "-"}
+                      </p>
+                      <p className="mt-1 text-center text-sm font-medium text-slate-500">
+                        เลขที่ {student.number ?? "-"}
+                      </p>
+
+                      <div className="my-5 text-center">
+                        <span className="text-2xl font-bold text-amber-500">
+                          {student.total}
+                        </span>
+                        <span className="ml-1 text-sm font-bold text-amber-500">คะแนน</span>
+                      </div>
+
+                      <div className="border-t border-[#e4e9ff] pt-3">
+                        <div className="mb-2 flex items-center justify-between gap-2 text-xs font-bold text-slate-500">
+                          <span>
+                            ส่งแล้ว {student.done}/{taskCount}
+                          </span>
+                          <span>ค้าง {student.pending} งาน</span>
+                        </div>
+                        <div className="h-2.5 overflow-hidden rounded-full bg-[#d9dff3]">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-[#60a5fa] to-[#a78bfa]"
+                            style={{ width: `${progress}%` }}
                           />
-                        </form>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-2 text-xs text-gray-400">
-            พิมพ์คะแนนแล้วกด Enter เพื่อบันทึกแต่ละช่อง
-          </p>
-        </div>
-      )}
+                        </div>
+                      </div>
+                    </article>
+                  }
+                />
+              );
+            })}
+          </section>
+        )}
+      </div>
     </main>
   );
 }

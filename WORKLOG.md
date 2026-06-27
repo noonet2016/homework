@@ -77,3 +77,9 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 ### Next steps
 - Room/grading screen still = Teio's reinterpretation; port renderStudentGrid + openStudentModal the same faithful way (build GAS mock ref → match → screenshot-verify).
 - M5: NextAuth teacher login + auth guards.
+
+- PIVOT (Trainer-directed): stop reimplementing GAS UI in React; SERVE THE REAL GAS UI on MySQL. Teio (codex) built it: public/legacy/index.html = original index.html + CSS.html + JS.html inlined VERBATIM; google.script.run replaced by a shim -> POST /api/gas {fn,args}; license bypassed. src/app/api/gas/route.ts = Prisma-backed GAS backend fns (sheetName=Room.id). / redirects to /legacy/index.html. Rudolf verified: lobby screenshot (scratch/shot-legacy.png) matches GAS; fetchStudentData = 30 students/10 tasks, โฟล์ค code16445 scores [5,10,0..]=15 (exact); updateStudentScores save+readback ok. Commit 84c62ff. KEY: GAS 'submitted' = ALL tasks complete (Core.getRoomStats), so rooms show low % — that is the faithful/real number (my earlier React used >=1-task and was wrong). Obsolete React pages (rooms/[id], StudentScoreModal, roomThemes) now unused but harmless; can delete later.
+
+### Next steps
+- In-browser click test of room grid + score modal (verified via API, not yet via real click). Test admin/teacher mode (toggleAdminLogin) — currently no password backend (checkTeacherPassword stubbed) -> wire a simple teacher login (M5).
+- Decide cleanup of dead React pages. Image-upload fns (uploadTaskImage etc.) still stubbed — implement if the wife uses worksheet images.

@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-// M4e — teacher-only inline edit modal for a classroom card. (Mejiro/GLM, Rudolf-verified)
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { updateRoomDetails } from '@/lib/actions/rooms';
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { createRoom } from "@/lib/actions/rooms";
 
 const ROOM_ICONS = [
   '🧩', '🚀', '🎯', '📚', '🧪', '🌟', '🎨', '🧮', '🔬', '🛰️', '🎵', '🏅', '🏆', '📘', '💡', '🛠️', '🧭', '🎓', '📈', '📝',
@@ -11,17 +10,15 @@ const ROOM_ICONS = [
   '🎤', '🎧', '🎹', '🥁', '🎸', '🎻', '🏀', '⚽', '🏸', '🏓', '♟️', '📌', '📎', '🗂️', '🧾', '📊', '📋', '🗃️', '🪄'
 ];
 
-interface RoomEditModalProps {
-  id: string;
-  name: string;
-  icon: string;
+interface RoomCreateCardProps {
   usedIcons: string[];
 }
 
-export default function RoomEditModal({ id, name, icon, usedIcons }: RoomEditModalProps) {
+export default function RoomCreateCard({ usedIcons }: RoomCreateCardProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [selectedIcon, setSelectedIcon] = useState(icon);
+  const [name, setName] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState("🧩");
 
   useEffect(() => {
     setMounted(true);
@@ -29,19 +26,20 @@ export default function RoomEditModal({ id, name, icon, usedIcons }: RoomEditMod
 
   const handleSubmit = () => {
     setOpen(false);
+    setName("");
+    setSelectedIcon("🧩");
   };
 
-  const availableIcons = ROOM_ICONS.filter(emoji => !usedIcons.includes(emoji) || emoji === icon);
+  // Filter available icons
+  const availableIcons = ROOM_ICONS.filter(emoji => !usedIcons.includes(emoji) || emoji === selectedIcon);
 
   return (
     <>
       <button
-        type="button"
-        title="แก้ไขห้อง"
-        className="text-slate-300 hover:text-indigo-500 text-lg leading-none px-1"
         onClick={() => setOpen(true)}
+        className="w-full rounded-[28px] border-2 border-dashed border-[#c8d6ee] bg-white p-6 text-center text-[#42537c] font-bold hover:bg-slate-50 transition-colors"
       >
-        <i className="fa-solid fa-pen" />
+        + เพิ่มห้องเรียนใหม่
       </button>
 
       {open && mounted && createPortal(
@@ -61,19 +59,20 @@ export default function RoomEditModal({ id, name, icon, usedIcons }: RoomEditMod
             >
               ✕
             </button>
-            <h2 className="text-base font-bold text-slate-700 mb-4">แก้ไขห้องเรียน</h2>
-            <form action={updateRoomDetails} onSubmit={handleSubmit} className="flex flex-col">
-              <input type="hidden" name="id" value={id} />
+            <h2 className="text-base font-bold text-slate-700 mb-4">สร้างห้องเรียนใหม่</h2>
+            <form action={createRoom} onSubmit={handleSubmit} className="flex flex-col">
               <input type="hidden" name="icon" value={selectedIcon} />
 
-              <label className="text-xs font-bold text-slate-500" htmlFor={`name-${id}`}>
+              <label className="text-xs font-bold text-slate-500" htmlFor="new-room-name">
                 ชื่อห้องเรียน
               </label>
               <input
-                id={`name-${id}`}
+                id="new-room-name"
                 name="name"
                 type="text"
-                defaultValue={name}
+                placeholder="ชื่อห้อง เช่น ป.4/1"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm mt-1 mb-3"
               />
@@ -120,7 +119,7 @@ export default function RoomEditModal({ id, name, icon, usedIcons }: RoomEditMod
                   type="submit"
                   className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-sm"
                 >
-                  บันทึก
+                  สร้างห้องเรียน
                 </button>
               </div>
             </form>

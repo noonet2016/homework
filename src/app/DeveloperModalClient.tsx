@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DeveloperModalContent from "./DeveloperModalContent";
 
 interface DeveloperModalClientProps {
@@ -11,6 +11,13 @@ export default function DeveloperModalClient({
   buttonContent,
 }: DeveloperModalClientProps) {
   const [open, setOpen] = useState(false);
+
+  // Listen for the global custom event dispatched by the topbar fa-code button
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("open-dev-modal", handler);
+    return () => window.removeEventListener("open-dev-modal", handler);
+  }, []);
 
   return (
     <>

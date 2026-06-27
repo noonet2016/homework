@@ -1,0 +1,41 @@
+/* ===== Lobby room drag-and-drop (ported from GAS CSS.html) ===== */
+
+/* Ghost placeholder left in the grid when dragging */
+.lobby-room-draggable.lobby-room-dragging {
+  opacity: 0.55;
+  transform: scale(0.97);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* The card clone floating under the cursor */
+.lobby-room-floating {
+  opacity: 1 !important;
+  transform: rotate(1.2deg) scale(1.03);
+  box-shadow: 0 22px 48px rgba(59, 130, 246, 0.32) !important;
+  z-index: 9999;
+  cursor: grabbing !important;
+  pointer-events: none;
+  transition: none;
+}
+
+.lobby-room-draggable {
+  will-change: transform;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 180ms ease,
+              opacity 180ms ease;
+}
+
+/* ── Disable hover effects while dragging ──────────────────────────────────
+   Prevent Tailwind hover:translate / hover:shadow from fighting drag transforms.
+   Applied by adding .is-dragging to document.body in startDrag(). */
+body.is-dragging .lobby-room-draggable:hover {
+  transform: none !important;
+  translate: none !important;
+  box-shadow: 0 10px 25px rgba(92, 108, 143, 0.12) !important;
+  transition: none !important;
+}
+
+body.is-dragging .lobby-room-draggable {
+  /* Suppress all transition conflicts — only our inline style transitions should run */
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}

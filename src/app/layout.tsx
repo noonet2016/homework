@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import "./gas-theme.css";
+import "./drag.css";
 import { getSession } from "@/lib/auth";
 import TeacherAuthChip from "./TeacherAuthChip";
 import DeveloperModal from "./DeveloperModal";
+import Loader from "./Loader";
+import ToastContainer from "./ToastContainer";
+
 
 const notoSansThai = Noto_Sans_Thai({
   variable: "--font-noto-thai",
@@ -31,6 +35,8 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <TeacherAuthChip isTeacher={isTeacher} />
+        <Loader />
+        <ToastContainer />
         {children}
         {/* Global footer credit (ported verbatim from GAS index.html) */}
         <footer className="py-10 px-4 text-center relative z-30 print:hidden mt-auto">

@@ -17,18 +17,25 @@ function sign(payload: string): string {
 
 export type Session = { isTeacher: boolean; role: string | null };
 
-export async function createSession(role = "TEACHER"): Promise<void> {
-  const payload = JSON.stringify({ role, exp: Date.now() + MAX_AGE * 1000 });
+export async function createSession(role = "TEACHER", remember = false): Promise<void> {
+  const age = remember ? 10 * 60 : undefined;
+  const exp = Date.now() + (remember ? 10 * 60 * 1000 : 1000 * 60 * 60 * 24 * 30);
+  const payload = JSON.stringify({ role, exp });
   const value = Buffer.from(payload).toString("base64url");
   const token = `${value}.${sign(value)}`;
   const store = await cookies();
-  store.set(COOKIE, token, {
+  
+  const options: any = {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: MAX_AGE,
-  });
+  };
+  if (age !== undefined) {
+    options.maxAge = age;
+  }
+  
+  store.set(COOKIE, token, options);
 }
 
 export async function destroySession(): Promise<void> {

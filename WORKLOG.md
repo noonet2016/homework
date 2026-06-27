@@ -115,3 +115,78 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
   - Restored original React style (from `22.11.18.png` mock with purple gradient details, white cards with borders, rounded photos) instead of the flat GAS HTML styling.
   - Adjusted `layout.tsx` footer `z-index` from `z-10` to `z-30` so that the modal overlay sits correctly in front of the lobby's `relative z-20` Leaderboard title button.
   - Verified project build compiles cleanly (`npm run build` PASS).
+
+- Oguri Cap (Edit): Wrapped the Reports sidebar link (`/reports` with `fa-chart-simple` icon) in an `isTeacher` session check in [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx) so it is hidden in normal mode and only visible in Teacher mode, matching the original GAS behavior. Verified `npm run build` passes.
+- Oguri Cap (Create & Edit): Built [LeftRail.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/LeftRail.tsx) client component to make sidebar buttons fully interactive to match original GAS behavior:
+  - **คู่มือการใช้งาน** (Guide): Opens a modal with original guide text.
+  - **เข้าสู่โหมดคุณครู** (Teacher Mode): Programmatically clicks the global authentication button to toggle login/logout.
+  - **ผู้พัฒนา** (Developer): Reuses `DeveloperModalClient` to open the developer info modal.
+  - Integrated [LeftRail.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/LeftRail.tsx) in [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx). Verified `npm run build` passes.
+
+- Oguri Cap (Edit): Restyled the login modal in [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) to match the layout and design of the original GAS `admin-modal` screen:
+  - Aligned title icon (`fa-chalkboard-user text-blue-500`) and subheadings.
+  - Formatted the inputs with exact styles (focus ring, blue borders).
+  - Added visibility toggle (eye icon) for password field via local state (`showPassword`).
+  - Styled cancel/login footer buttons and checkbox exactly to match.
+  - Kept both `username` and `password` fields for Next.js database auth compatibility. Verified `npm run build` passes.
+
+- Oguri Cap (Create & Edit): Ported and integrated the animated gaming rocket loader from original GAS app:
+  - Appended rocket animations keyframes (`rocket-vibration`, `rocket-float`, `engine-glow`, `dot-blink`) and classes (`.animate-rocket`, `.rocket-engine`, `.loading-dot`) to [gas-theme.css](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/gas-theme.css).
+  - Created [Loader.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/Loader.tsx) client component containing the rocket loading UI markup, exposing a global `window.toggleLoader(show)` utility with tuned show/hide delays (`LOADER_SHOW_DELAY_MS` = 50, `LOADER_MIN_VISIBLE_MS` = 2500) to ensure the loader shows up instantly and stays visible long enough to be visible during fast local transitions.
+  - Created [loading.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/loading.tsx) root-level loading boundary to automatically display the loader during Next.js routing transitions.
+  - Integrated and rendered `<Loader />` inside `RootLayout` in [layout.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/layout.tsx) for global client-side support. Verified `npm run build` passes.
+
+- Oguri Cap (Edit): Added `formatRoomName` helper in [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx) to split the room name at the first space (which always follows the subject name) and render the class/room code on a new line using `<br />`, ensuring clean layout without awkward wrapping on room cards. Verified `npm run build` passes.
+
+- Oguri Cap (Create & Edit): Ported and integrated the Toast notification alert system from original GAS app:
+  - Appended toast styling classes (`.toast`, `.toast-icon`, `.toast.success`, `.toast.error`, `.toast.info`, `.toast-close`) to [gas-theme.css](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/gas-theme.css).
+  - Created [ToastContainer.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/ToastContainer.tsx) component rendering the `#toast-stack` container, managing toast states (success, error, info), auto-dismissing after 3 seconds, and registering a global `window.notify(msg, type)` function exactly matching GAS API.
+  - Integrated `<ToastContainer />` inside `RootLayout` in [layout.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/layout.tsx). Verified `npm run build` passes.
+  - Added calls to `window.notify()` inside [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) to trigger toast alerts exactly like GAS: "เข้าสู่โหมดคุณครูแล้ว" (success) on successful login, the error message (error) on failed login, and "ออกจากโหมดคุณครูแล้ว" (info) on logout. Verified `npm run build` passes.
+  - Implemented a logout confirmation modal inside [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) matching the styling and content of `logout-confirm-modal` in GAS, preventing direct logout and requiring explicit confirmation. Verified `npm run build` passes.
+  - Configured conditional autofocus in [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) to automatically focus the password input instead of the username input when the default username ("krutaktan") is already pre-filled. Verified `npm run build` passes.
+  - Implemented the "Remember login for 10 minutes" functionality:
+    - Added `name="remember"` to the checkbox in [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx).
+    - Updated `login` action in [auth.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/lib/actions/auth.ts) to parse the `remember` checkbox and pass it.
+    - Updated `createSession` in [auth.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/lib/auth.ts) to set a cookie with a 10-minute `maxAge` if the checkbox is checked, and session-only (no maxAge) if unchecked. Verified `npm run build` passes.
+  - Resolved browser password manager compatibility issues:
+    - Updated [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) to render the login modal in the DOM continuously (hidden/shown using transition classes `opacity-0 pointer-events-none -z-50` vs `opacity-100 pointer-events-auto z-[1000002]`) rather than mounting/unmounting dynamically or using `display: none` (`hidden`), ensuring browsers can detect and autofill credentials on initial page load.
+    - Appended `autoComplete="username"` and `autoComplete="current-password"` to the username/password input fields to enable secure browser-based credential saving and automatic autofill. Verified `npm run build` passes.
+  - Implemented automatic password pre-fill using `localStorage` matching GAS logic:
+    - Updated [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) to save the password and timestamp (`LT_ADMIN_PASS_REMEMBER`, `LT_ADMIN_PASS_TIME`) in the `useActionState` callback *only* upon a successful server login response, ensuring invalid/incorrect passwords are never stored.
+    - Added a client-side `useEffect` hook to check the timestamp on mount and automatically pre-fill the password state if the stored password is less than 10 minutes old. Verified `npm run build` passes.
+  - Set `secure: false` in [auth.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/lib/auth.ts) for the session cookie to ensure the browser does not reject the cookie on local HTTP (`http://localhost:3000`) and private networks in production builds. Verified `npm run build` passes.
+  - Removed `revalidatePath` from `login` and `logout` server actions in [auth.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/lib/actions/auth.ts) to resolve a Next.js Server Action issue where `revalidatePath` breaks/discards the `Set-Cookie` header in the action response, relying instead on client-side `router.refresh()` to reload page data. Verified `npm run build` passes.
+  - Configured inputs in [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx) with explicit `onKeyDown` handlers checking for the "Enter" key and programmatically calling `form.requestSubmit()`, allowing users to press Enter in either input to submit the form instead of manually clicking the button. Verified `npm run build` passes.
+  - Increased `z-index` of the toast stack in [ToastContainer.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/ToastContainer.tsx) from `z-[1000000]` to `z-[9999999]` to ensure notifications are always layered on top of the modal overlay backdrops. Verified `npm run build` passes.
+  - Refactored login modal mounting and autofill support in [TeacherAuthChip.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/TeacherAuthChip.tsx):
+    - Reverted to conditional React mounting `{open && (...)}` for the interactive login modal to ensure the backdrop and form elements are physically destroyed when closed, eliminating fading bugs and stuck mouse-interaction overlays after form submissions.
+    - Rendered an invisible static `<form>` containing matching username/password inputs in the DOM at all times (`w-0 h-0 overflow-hidden absolute pointer-events-none`) for secure credentials managers (such as Apple Keychain/Google Autofill) to discover and autofill successfully. Verified `npm run build` passes.
+  - Resolved classroom card edit modal positioning glitch:
+    - Wrapped the edit modal card in [RoomEditModal.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomEditModal.tsx) using a React Portal (`createPortal`) targeting `document.body`. This decouples the overlay rendering context from the parent card's viewport (which has hover scale and translate transforms that constrain fixed elements), completely preventing layout squishing, screen glitches, and flashing when opening the classroom edit form. Verified `npm run build` passes.
+  - Implemented GAS-identical classroom emoji picker grid in [RoomEditModal.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomEditModal.tsx):
+    - Added the predefined `ROOM_ICONS` array matching the original GAS project dataset of 59 emojis.
+    - Updated [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx) to pass the list of used classroom emojis.
+    - Filtered the emoji grid to only display unused icons (while retaining the current room's active emoji), rendering selectable emoji buttons inside a scrollable grid with a status hint. Checked values bind to a hidden form input. Verified `npm run build` passes.
+  - Replaced inline classroom creation card with a modal-based emoji picker:
+    - Created [RoomCreateCard.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomCreateCard.tsx) to act as the client-side button card for creating rooms.
+    - Designed the create modal to use the exact same aesthetic and features as the edit modal, using React Portals to render on `document.body` and displaying the 59 `ROOM_ICONS` dataset filtered to exclude already used emojis.
+    - Updated [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx) to mount `<RoomCreateCard usedIcons={roomStats.map((r) => r.icon)} />` inside the dashboard when the teacher role is active. Verified `npm run build` passes.
+  - Implemented delete and duplicate classroom confirmation modal popups matching GAS:
+    - Created [RoomActionButtons.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomActionButtons.tsx) client component to host the duplicate and delete icon buttons.
+    - Added beautiful confirm modal popups (rendered using React Portals) for both actions with customizable text. When confirmed, they invoke the Next.js Server Actions `deleteRoom` and `duplicateRoom` programmatically.
+    - Replaced the direct `<form>` action submissions in [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx) with the new `<RoomActionButtons />` tag. Verified `npm run build` passes.
+  - Upgraded classroom duplication process to support detailed GAS copying parameters:
+    - Updated [RoomActionButtons.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomActionButtons.tsx) to render a detailed option-selection modal displaying checkbox options: "คัดลอกรายชื่อนักเรียน", "คัดลอกคะแนนด้วย", "คัดลอกชื่องาน/รูปงานประกอบ", and text input for the new room's name. Implemented automatic checkbox validation linking students with scores.
+    - Updated `duplicateRoom` Server Action in [rooms.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/lib/actions/rooms.ts) to parse these options, duplicate the room, and conditionally copy the list of students, task assignments, and student score values to the newly created database target. Verified `npm run build` passes.
+    - Added absolute top-right close (`✕`) buttons to [RoomEditModal.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomEditModal.tsx), [RoomCreateCard.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomCreateCard.tsx), and both the duplicate and delete confirmation modals in [RoomActionButtons.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomActionButtons.tsx), ensuring users can close modals by clicking the standard 'X' icon. Verified `npm run build` passes.
+  - Implemented Drag and Drop classroom card sorting in the dashboard:
+    - Created [RoomsGrid.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/RoomsGrid.tsx) client component to wrap the classroom cards grid.
+    - Used native HTML5 Drag and Drop API to allow teachers to drag and reorder classroom cards. Configured grab cursors, opacity animations (`opacity-30`), and border highlight cues on drag hover.
+    - Added `reorderRooms` Server Action in [rooms.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/lib/actions/rooms.ts) to receive the list of sorted classroom IDs and update `sortOrder` index variables in the database.
+    - Integrated `<RoomsGrid />` inside [page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/page.tsx). Verified `npm run build` passes.
+
+> [!WARNING]
+> **UNRESOLVED ISSUE (Suspended as per Trainer's request):**
+> The "Remember login for 10 minutes" feature does not persist the login state reliably upon reloading or closing/re-opening the tab in some browser environments. Despite disabling cookie `secure` flags and client-side transition workarounds, the browser still fails to autofill or preserve the session consistently. This task has been put on hold to avoid further resource wastage.
+

@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createRoom, deleteRoom, duplicateRoom } from "@/lib/actions/rooms";
 import RoomEditModal from "./RoomEditModal";
+import RoomCreateCard from "./RoomCreateCard";
+import RoomActionButtons from "./RoomActionButtons";
+import RoomsGrid from "./RoomsGrid";
+import LeftRail from "./LeftRail";
+import TopbarActions from "./TopbarActions";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +30,20 @@ const ROW_STYLES = [
   { bg: "linear-gradient(to bottom, #fff3e0, #ffccbc)", border: "#ffab91", rankIcon: "🥉", nameColor: "#7c2d12" },
   { bg: "#fffaf0", border: "#ffe0b2", rankIcon: "", nameColor: "#1e3a5f" },
 ];
+
+function formatRoomName(name: string) {
+  const index = name.indexOf(" ");
+  if (index !== -1) {
+    return (
+      <>
+        {name.substring(0, index).trim()}
+        <br />
+        {name.substring(index + 1).trim()}
+      </>
+    );
+  }
+  return name;
+}
 
 export default async function Home() {
   const { isTeacher } = await getSession();
@@ -68,26 +87,7 @@ export default async function Home() {
         <div className="lobby-shell">
           <div className="grid grid-cols-1 lg:grid-cols-[84px_1fr_360px] min-h-[880px]">
             {/* ===== Left rail ===== */}
-            <aside className="left-rail p-4 hidden lg:flex flex-col items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center text-2xl shadow">
-                <i className="fa-solid fa-rocket" />
-              </div>
-              <span className="rail-btn fa-btn active" title="หน้าหลัก">
-                <i className="fa-solid fa-house" />
-              </span>
-              <Link href="/reports" className="rail-btn fa-btn" title="รายงานความก้าวหน้า">
-                <i className="fa-solid fa-chart-simple" />
-              </Link>
-              <span className="rail-btn fa-btn" title="คู่มือการใช้งาน">
-                <i className="fa-solid fa-book-open" />
-              </span>
-              <span className="rail-btn fa-btn" title="เข้าสู่โหมดคุณครู">
-                <i className="fa-solid fa-user-shield" />
-              </span>
-              <span className="rail-btn fa-btn" title="ผู้พัฒนา">
-                <i className="fa-solid fa-code" />
-              </span>
-            </aside>
+            <LeftRail isTeacher={isTeacher} />
 
             {/* ===== Center: rooms ===== */}
             <section className="p-5 md:p-6 border-r border-[#e6ecf6]">
@@ -102,118 +102,14 @@ export default async function Home() {
                     className="w-[260px] md:w-[340px] rounded-full border border-slate-300 px-4 py-2.5 text-base bg-white"
                     placeholder="Search"
                   />
-                  <span className="px-3 py-2 rounded-xl border border-slate-200 bg-white fa-btn text-slate-500">
-                    <i className="fa-solid fa-user-shield" />
-                  </span>
+                  <TopbarActions isTeacher={isTeacher} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-12 pt-8">
-                {roomStats.map((room) => (
-                  <div
-                    key={room.id}
-                    className="relative w-full text-left rounded-[24px] bg-white border border-[#e9eef7] pt-14 pb-4 px-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] hover:shadow-[0_14px_30px_rgba(92,108,143,0.18)] hover:-translate-y-0.5 transition overflow-visible"
-                  >
-                    {isTeacher ? (
-                      <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
-                        <RoomEditModal id={room.id} name={room.name} icon={room.icon} />
-                        <form action={duplicateRoom}>
-                          <input type="hidden" name="id" value={room.id} />
-                          <button
-                            type="submit"
-                            title="ทำสำเนาห้อง"
-                            className="text-slate-300 hover:text-teal-500 text-lg leading-none px-1"
-                          >
-                            <i className="fa-solid fa-copy" />
-                          </button>
-                        </form>
-                        <form action={deleteRoom}>
-                          <input type="hidden" name="id" value={room.id} />
-                          <button
-                            type="submit"
-                            title="ลบห้อง"
-                            className="text-slate-300 hover:text-red-500 text-lg leading-none px-1"
-                          >
-                            <i className="fa-solid fa-trash-can" />
-                          </button>
-                        </form>
-                      </div>
-                    ) : null}
-
-                    <Link href={`/rooms/${room.id}`} className="block">
-                      <div
-                        className={`absolute left-1/2 -translate-x-1/2 -top-7 w-16 h-16 rounded-2xl bg-gradient-to-br ${room.theme.chip} text-white grid place-items-center shadow-[0_10px_18px_rgba(78,158,238,0.35)] text-2xl border-4 border-white`}
-                      >
-                        {room.icon}
-                      </div>
-                      <div className="text-center min-w-0">
-                        <h4
-                          title={room.name}
-                          className="text-2xl font-extrabold text-[#1f2e53] leading-tight max-w-full overflow-hidden"
-                          style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                          }}
-                        >
-                          {room.name}
-                        </h4>
-                        <p className="text-sm text-slate-500">
-                          นักเรียนทั้งหมด {room.studentCount} คน
-                        </p>
-                      </div>
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-sm font-bold text-[#28375d]">Progress</span>
-                          <span className="text-sm font-bold text-[#28375d]">
-                            {room.completion}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-[#eef2f8] rounded-full h-2.5">
-                          <div
-                            className={`bg-gradient-to-r ${room.theme.bar} h-2.5 rounded-full`}
-                            style={{ width: `${room.completion}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-3 rounded-xl bg-[#f8fbff] border border-[#edf2fb] px-3 py-2 flex items-center justify-between text-xs text-slate-500">
-                        <span>✅ เริ่มส่ง {room.submitted}</span>
-                        <span>⏳ ยังไม่ส่ง {room.pending}</span>
-                      </div>
-                    </Link>
-                  </div>
-                ))}
-
-                {isTeacher ? (
-                  <form
-                    action={createRoom}
-                    className="w-full rounded-[28px] border-2 border-dashed border-[#c8d6ee] bg-white p-5 flex flex-col gap-3 justify-center"
-                  >
-                    <p className="text-center text-[#42537c] font-bold">+ เพิ่มห้องเรียนใหม่</p>
-                    <div className="flex gap-2">
-                      <input
-                        name="icon"
-                        defaultValue="🧩"
-                        maxLength={2}
-                        aria-label="ไอคอน"
-                        className="w-12 rounded-xl border border-slate-200 px-2 text-center text-xl bg-white"
-                      />
-                      <input
-                        name="name"
-                        placeholder="ชื่อห้อง เช่น ป.4/1"
-                        required
-                        className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-bold text-white hover:bg-violet-700"
-                    >
-                      เพิ่มห้องเรียน
-                    </button>
-                  </form>
-                ) : null}
-              </div>
+              <RoomsGrid
+                initialRooms={roomStats}
+                isTeacher={isTeacher}
+              />
 
               {roomStats.length === 0 && (
                 <div className="col-span-full glass-panel rounded-2xl p-8 text-center mt-8">

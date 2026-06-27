@@ -290,3 +290,118 @@
   z-index: 10;
 }
 .dev-modal-close-btn:hover { background: #fee2e2; color: #ef4444; }
+
+/* Rocket Loading Animations */
+@keyframes rocket-vibration {
+  0% { transform: translate(0,0) rotate(-45deg); }
+  25% { transform: translate(1px, 1px) rotate(-45deg); }
+  50% { transform: translate(-1px, -1px) rotate(-45deg); }
+  75% { transform: translate(1px, -1px) rotate(-45deg); }
+  100% { transform: translate(0,0) rotate(-45deg); }
+}
+@keyframes rocket-float {
+  0%, 100% { transform: translateY(0) rotate(-45deg); }
+  50% { transform: translateY(-15px) rotate(-45deg); }
+}
+@keyframes engine-glow {
+  0%, 100% { filter: drop-shadow(0 0 10px #f59e0b); opacity: 0.8; }
+  50% { filter: drop-shadow(0 0 25px #fbbf24); opacity: 1; }
+}
+.animate-rocket {
+  animation: rocket-vibration 0.1s infinite, rocket-float 1.5s ease-in-out infinite;
+  display: inline-block;
+}
+.rocket-engine {
+  animation: engine-glow 0.8s ease-in-out infinite;
+}
+@keyframes dot-blink {
+  0%, 20% { opacity: 0; }
+  50%, 100% { opacity: 1; }
+}
+.loading-dot {
+  animation: dot-blink 1.4s infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Toast Notification Styles */
+.toast {
+  min-width: 320px;
+  max-width: 560px;
+  border-radius: 16px;
+  box-shadow: 0 18px 42px rgba(10, 16, 35, 0.24);
+  border: 2px solid #e8ecf5;
+  background: #ffffff;
+  color: #1f2a44;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateY(-8px) scale(0.98);
+  opacity: 0;
+  transition: all .22s ease;
+}
+
+.toast.show {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.toast-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 800;
+  flex: 0 0 auto;
+}
+
+.toast.success {
+  border-color: #86efac;
+}
+
+.toast.error {
+  border-color: #fca5a5;
+}
+
+.toast.info {
+  border-color: #93c5fd;
+}
+
+.toast.success .toast-icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.toast.error .toast-icon {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.toast.info .toast-icon {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.toast-close {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.toast-close:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+

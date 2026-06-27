@@ -12,7 +12,7 @@ GAS source: /Users/kanokkarn/Data/AI Title/projects/homework/src/{index.html,CSS
 - [ ] M4b Room/grading screen — student card grid (renderStudentGrid) + score modal (openStudentModal); reuse server actions; faithful + verify
 - [ ] M4c Task manager — add/edit/reorder tasks (renderTaskManagerList) + room actions
 - [ ] M4d Add/Edit student + bulk CSV import (addStudent/updateStudentProfile/addStudentsBulk)
-- [ ] M4e Room edit / duplicate / delete modals (updateRoomDetails)
+- [~] M4e Room edit / duplicate — server actions updateRoomDetails + duplicateRoom DONE (Mejiro/GLM, Rudolf-verified, build green); modals UI still TODO
 - [ ] M5 Teacher login (admin mode) — User table + bcrypt; gate all mutating server actions
 - [ ] M4f Reports view (report-view) — summary cards + per-room table + print
 - [ ] M4g QR codes (per-student grade link + whole-room) — if feasible

@@ -9,6 +9,7 @@ type StudentScoreModalProps = {
   roomId: string;
   student: StudentCardData;
   tasks: TaskData[];
+  isTeacher: boolean;
   onClose: () => void;
 };
 
@@ -16,6 +17,7 @@ export default function StudentScoreModal({
   roomId,
   student,
   tasks,
+  isTeacher,
   onClose,
 }: StudentScoreModalProps) {
   const router = useRouter();
@@ -41,6 +43,7 @@ export default function StudentScoreModal({
   }
 
   function saveScores() {
+    if (!isTeacher) return;
     startTransition(async () => {
       const valuesByTaskId = Object.fromEntries(
         tasks.map((task) => [task.id, Number(values[task.id] || "0") || 0]),
@@ -128,6 +131,7 @@ export default function StudentScoreModal({
                     type="number"
                     id={`score-input-${index}`}
                     value={values[task.id] ?? "0"}
+                    disabled={!isTeacher}
                     onFocus={(event) => event.currentTarget.select()}
                     onChange={(event) =>
                       setValues((current) => ({
@@ -135,7 +139,7 @@ export default function StudentScoreModal({
                         [task.id]: event.target.value,
                       }))
                     }
-                    className="w-20 sm:w-24 border rounded-lg p-1.5 text-center text-xl md:text-2xl font-semibold"
+                    className="w-20 sm:w-24 border rounded-lg p-1.5 text-center text-xl md:text-2xl font-semibold disabled:bg-slate-100 disabled:text-slate-500"
                   />
                 </div>
               ))
@@ -143,24 +147,36 @@ export default function StudentScoreModal({
           </div>
 
           <div className="p-4 md:p-5 border-t border-slate-200 bg-white shrink-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg font-semibold opacity-60"
-                disabled
-              >
-                <i className="fa-solid fa-qrcode mr-2" />
-                สร้าง QR ให้คะแนนด่วน
-              </button>
-              <button
-                type="button"
-                onClick={saveScores}
-                disabled={isPending || tasks.length === 0}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <i className="fa-solid fa-floppy-disk mr-2" />
-                {isPending ? "บันทึก..." : "บันทึก"}
-              </button>
+            <div className={`grid grid-cols-1 ${isTeacher ? "sm:grid-cols-2" : ""} gap-2`}>
+              {isTeacher ? (
+                <button
+                  type="button"
+                  className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg font-semibold opacity-60"
+                  disabled
+                >
+                  <i className="fa-solid fa-qrcode mr-2" />
+                  สร้าง QR ให้คะแนนด่วน
+                </button>
+              ) : null}
+              {isTeacher ? (
+                <button
+                  type="button"
+                  onClick={saveScores}
+                  disabled={isPending || tasks.length === 0}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <i className="fa-solid fa-floppy-disk mr-2" />
+                  {isPending ? "บันทึก..." : "บันทึก"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-lg font-semibold"
+                >
+                  ปิด
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -12,11 +12,12 @@ export async function createStudent(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!roomId || !name) return;
   const nickname = String(formData.get("nickname") ?? "").trim() || null;
+  const code = String(formData.get("code") ?? "").trim() || null;
   const numberRaw = String(formData.get("number") ?? "").trim();
   const number = numberRaw ? Number(numberRaw) : null;
 
   await prisma.student.create({
-    data: { roomId, name, nickname, number: Number.isNaN(number) ? null : number },
+    data: { roomId, name, nickname, code, number: Number.isNaN(number) ? null : number },
   });
   revalidatePath(`/rooms/${roomId}`);
 }
@@ -37,5 +38,29 @@ export async function renameStudent(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!id || !name) return;
   await prisma.student.update({ where: { id }, data: { name } });
+  revalidatePath(`/rooms/${roomId}`);
+}
+
+export async function updateStudent(formData: FormData) {
+  await requireTeacher();
+  const id = String(formData.get("id") ?? "");
+  const roomId = String(formData.get("roomId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !roomId || !name) return;
+
+  const nickname = String(formData.get("nickname") ?? "").trim() || null;
+  const code = String(formData.get("code") ?? "").trim() || null;
+  const numberRaw = String(formData.get("number") ?? "").trim();
+  const number = numberRaw ? Number(numberRaw) : null;
+
+  await prisma.student.update({
+    where: { id },
+    data: {
+      name,
+      nickname,
+      code,
+      number: Number.isNaN(number) ? null : number,
+    },
+  });
   revalidatePath(`/rooms/${roomId}`);
 }

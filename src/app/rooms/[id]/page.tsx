@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { createStudent } from "@/lib/actions/students";
-import { createTask } from "@/lib/actions/tasks";
+import { getSession } from "@/lib/auth";
+import ClassroomManagerClient from "./ClassroomManagerClient";
 import StudentGridClient, { type StudentCardData, type TaskData } from "./StudentGridClient";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +13,7 @@ export default async function RoomPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { isTeacher } = await getSession();
 
   const room = await prisma.room.findUnique({
     where: { id },
@@ -109,6 +110,9 @@ export default async function RoomPage({
           </div>
 
           <div className="flex items-center gap-2">
+            {isTeacher ? (
+              <ClassroomManagerClient roomId={room.id} students={students} tasks={tasks} />
+            ) : null}
             <span className="hidden md:inline text-sm font-semibold text-slate-500">
               กลับหน้าโฮม
             </span>
@@ -129,52 +133,12 @@ export default async function RoomPage({
           />
         </div>
 
-        <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm md:grid-cols-2">
-          <form action={createStudent} className="flex flex-wrap gap-2">
-            <input type="hidden" name="roomId" value={room.id} />
-            <input
-              name="number"
-              placeholder="เลขที่"
-              inputMode="numeric"
-              className="w-20 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-            />
-            <input
-              name="name"
-              placeholder="ชื่อนักเรียน"
-              required
-              className="min-w-40 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-            />
-            <input
-              name="nickname"
-              placeholder="ชื่อเล่น"
-              className="min-w-28 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700"
-            >
-              เพิ่มนักเรียน
-            </button>
-          </form>
-
-          <form action={createTask} className="flex flex-wrap gap-2">
-            <input type="hidden" name="roomId" value={room.id} />
-            <input
-              name="name"
-              placeholder="ชื่อใบงาน/ภาระงาน"
-              required
-              className="min-w-48 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-xl bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"
-            >
-              เพิ่มงาน
-            </button>
-          </form>
-        </div>
-
-        <StudentGridClient roomId={room.id} students={students} tasks={tasks} />
+        <StudentGridClient
+          roomId={room.id}
+          students={students}
+          tasks={tasks}
+          isTeacher={isTeacher}
+        />
       </div>
     </section>
   );

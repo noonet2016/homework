@@ -25,6 +25,7 @@ type StudentGridClientProps = {
   roomId: string;
   students: StudentCardData[];
   tasks: TaskData[];
+  isTeacher: boolean;
 };
 
 function getStatusIcon(pending: number) {
@@ -59,6 +60,7 @@ export default function StudentGridClient({
   roomId,
   students,
   tasks,
+  isTeacher,
 }: StudentGridClientProps) {
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<StudentCardData | null>(null);
@@ -196,6 +198,7 @@ export default function StudentGridClient({
           roomId={roomId}
           student={selectedStudent}
           tasks={tasks}
+          isTeacher={isTeacher}
           onClose={() => setSelectedStudent(null)}
         />
       ) : null}

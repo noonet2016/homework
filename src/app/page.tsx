@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { createRoom, deleteRoom } from "@/lib/actions/rooms";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ const ROW_STYLES = [
 ];
 
 export default async function Home() {
+  const { isTeacher } = await getSession();
   const rooms = await prisma.room.findMany({
     orderBy: { sortOrder: "asc" },
     include: { students: { include: { scores: { select: { value: true } } } } },
@@ -108,17 +110,18 @@ export default async function Home() {
                     key={room.id}
                     className="relative w-full text-left rounded-[24px] bg-white border border-[#e9eef7] pt-14 pb-4 px-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] hover:shadow-[0_14px_30px_rgba(92,108,143,0.18)] hover:-translate-y-0.5 transition overflow-visible"
                   >
-                    {/* delete (admin affordance) */}
-                    <form action={deleteRoom} className="absolute right-3 top-3 z-10">
-                      <input type="hidden" name="id" value={room.id} />
-                      <button
-                        type="submit"
-                        title="ลบห้อง"
-                        className="text-slate-300 hover:text-red-500 text-lg leading-none px-1"
-                      >
-                        <i className="fa-solid fa-trash-can" />
-                      </button>
-                    </form>
+                    {isTeacher ? (
+                      <form action={deleteRoom} className="absolute right-3 top-3 z-10">
+                        <input type="hidden" name="id" value={room.id} />
+                        <button
+                          type="submit"
+                          title="ลบห้อง"
+                          className="text-slate-300 hover:text-red-500 text-lg leading-none px-1"
+                        >
+                          <i className="fa-solid fa-trash-can" />
+                        </button>
+                      </form>
+                    ) : null}
 
                     <Link href={`/rooms/${room.id}`} className="block">
                       <div
@@ -164,34 +167,35 @@ export default async function Home() {
                   </div>
                 ))}
 
-                {/* add-room tile */}
-                <form
-                  action={createRoom}
-                  className="w-full rounded-[28px] border-2 border-dashed border-[#c8d6ee] bg-white p-5 flex flex-col gap-3 justify-center"
-                >
-                  <p className="text-center text-[#42537c] font-bold">+ เพิ่มห้องเรียนใหม่</p>
-                  <div className="flex gap-2">
-                    <input
-                      name="icon"
-                      defaultValue="🧩"
-                      maxLength={2}
-                      aria-label="ไอคอน"
-                      className="w-12 rounded-xl border border-slate-200 px-2 text-center text-xl bg-white"
-                    />
-                    <input
-                      name="name"
-                      placeholder="ชื่อห้อง เช่น ป.4/1"
-                      required
-                      className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-bold text-white hover:bg-violet-700"
+                {isTeacher ? (
+                  <form
+                    action={createRoom}
+                    className="w-full rounded-[28px] border-2 border-dashed border-[#c8d6ee] bg-white p-5 flex flex-col gap-3 justify-center"
                   >
-                    เพิ่มห้องเรียน
-                  </button>
-                </form>
+                    <p className="text-center text-[#42537c] font-bold">+ เพิ่มห้องเรียนใหม่</p>
+                    <div className="flex gap-2">
+                      <input
+                        name="icon"
+                        defaultValue="🧩"
+                        maxLength={2}
+                        aria-label="ไอคอน"
+                        className="w-12 rounded-xl border border-slate-200 px-2 text-center text-xl bg-white"
+                      />
+                      <input
+                        name="name"
+                        placeholder="ชื่อห้อง เช่น ป.4/1"
+                        required
+                        className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full rounded-xl bg-violet-600 py-2.5 text-sm font-bold text-white hover:bg-violet-700"
+                    >
+                      เพิ่มห้องเรียน
+                    </button>
+                  </form>
+                ) : null}
               </div>
 
               {roomStats.length === 0 && (

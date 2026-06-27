@@ -289,14 +289,14 @@ export default async function Home() {
                 )}
 
                 {/* Ranked rows (verbatim styling from GAS renderLeaderboard) */}
-                <div className="space-y-3">
+                <div className="space-y-5">
                   {leaderboard.slice(0, 10).map((room, idx) => {
                     const s = ROW_STYLES[idx] ?? ROW_STYLES[3];
                     return (
                       <Link
                         key={room.id}
                         href={`/rooms/${room.id}`}
-                        className="w-full flex items-center gap-3 p-2 rounded-2xl transition-transform active:scale-95 shadow-[0_4px_0_rgba(0,0,0,0.2)] mb-1"
+                        className="w-full flex items-center gap-3 p-2 rounded-2xl transition-transform active:scale-95 shadow-[0_4px_0_rgba(0,0,0,0.2)]"
                         style={{ background: s.bg, border: `2px solid ${s.border}` }}
                       >
                         <div

@@ -64,3 +64,10 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 ### Next steps
 - Browser-test full flow with REAL data (npm run dev → localhost:3000 → open a room → see students/scores grid).
 - M4 UI port; M5 NextAuth + auth guards.
+
+- TEAM (Rudolf orchestrating): M4 UI port — split by file so no conflicts, full team engaged. Tokai Teio (codex, edits files直接) → src/app/rooms/[id]/page.tsx (student card grid: rank MVP/Top/Player, total, nickname) + new StudentScoreModal.tsx (client, per-student score entry reusing setScore). Oguri Cap (agy, returned code) → src/app/page.tsx lobby (gamified room cards: gradient icon chip, Progress %, ✅เริ่มส่ง/⏳ยังไม่ส่ง). Mejiro McQueen (glm, returned code) → layout.tsx + globals.css (Noto Sans Thai font + fixed gradient bg, light-only; Rudolf FIXED bug `weights`→`weight` for next/font). Twin Turbo (gemini, returned code) → src/lib/roomThemes.ts (8 gradient themes + themeFor). Rudolf integrated all, `npm run build` PASS, both pages render-verified (HTTP 200, all UI markers present, nickname now shown). Commit 8b6fa8a. Gold Ship (kimi) not engaged — kimi CLI not installed on this Mac.
+- NOTE (corrected): team wrappers DO exist on this Mac at ~/my-agent-team/*.sh (codex-run/agy-run/gemini-run + glm-run.py). Prior assumption they were absent was wrong; Trainer corrected it. Delegate heavy work across team by default. Only codex+agy edit files; gemini/glm return text → Rudolf writes files.
+
+### Next steps
+- Optional: browser screenshot review by Trainer; tweak visuals.
+- M5: NextAuth teacher login + wire auth guards into all server actions (TODO(M5) markers present).

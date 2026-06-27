@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { createRoom, deleteRoom } from "@/lib/actions/rooms";
 
@@ -42,7 +43,10 @@ export default async function Home() {
             key={r.id}
             className="flex items-center justify-between rounded-xl border p-4"
           >
-            <span className="flex items-center gap-3">
+            <Link
+              href={`/rooms/${r.id}`}
+              className="flex items-center gap-3 hover:underline"
+            >
               <span className="text-2xl">{r.icon}</span>
               <span>
                 <span className="font-medium">{r.name}</span>
@@ -50,7 +54,7 @@ export default async function Home() {
                   · {r._count.students} นักเรียน · {r._count.tasks} งาน
                 </span>
               </span>
-            </span>
+            </Link>
             <form action={deleteRoom}>
               <input type="hidden" name="id" value={r.id} />
               <button

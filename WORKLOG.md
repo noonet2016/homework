@@ -20,9 +20,13 @@
 
 - Symboli Rudolf (Write/Bash): M2 DONE — created src/lib/prisma.ts (PrismaClient singleton via PrismaMariaDb adapter; constructor takes DATABASE_URL string directly per adapter d.ts) + scripts/test-db.ts smoke test. `npx tsx scripts/test-db.ts` PASSED: create→read→count→delete a Room, Thai text + emoji preserved (utf8mb4). **Prisma 7 runtime adapter path fully proven** — this is exactly what the deployed app uses. Whole Prisma 7 stack de-risked locally.
 
+- Symboli Rudolf (Bash): git init (own repo, branch master), identity repo-local kanokkarn <unsojp777@gmail.com> (changeable). Added /src/generated to .gitignore (regen via prisma generate). Initial commit a884915 (25 files).
+- Symboli Rudolf (Read/Write): M3 start — read Next 16 bundled docs (node_modules/next/dist/docs .../07-mutating-data.md) per AGENTS.md warning. Built first vertical slice = Room CRUD: src/lib/actions/rooms.ts (server actions createRoom/deleteRoom/renameRoom, "use server", revalidatePath) + src/app/page.tsx lobby (force-dynamic, lists rooms w/ counts, add/delete forms). `npm run build` PASSED (route / = ƒ dynamic, TS ok). Ran prod server, curl / = HTTP 200 with Thai heading rendered.
+- KEY for M6 deploy: with output:'standalone', start command MUST be `node .next/standalone/server.js` (NOT `next start`). standalone server.js confirmed built.
+
 ### Next steps
-- M3: core CRUD (rooms/students/tasks/scores) via API routes/server actions. Per Next 16 AGENTS.md warning, consult node_modules/next/dist/docs before writing route/server-action code (breaking changes).
-- git init for homework-next (own repo) — structure is now stable, good point to init.
+- M3 continue: replicate the proven slice to Students, Tasks, Scores (server actions + pages). Room slice + UI test via real browser still pending (smoke test proved DB writes).
+- M5 (later): NextAuth teacher login; then wire auth checks into every server action (TODOs already marked).
 
 ### Open questions
 - Subdomain name (proposed homework.thatnarai.net)? SSH on Plesk: tried, "Permission denied" (likely shell not /bin/bash or wrong system-user pw) — deferred to M6.

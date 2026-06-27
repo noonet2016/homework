@@ -71,3 +71,9 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 ### Next steps
 - Optional: browser screenshot review by Trainer; tweak visuals.
 - M5: NextAuth teacher login + wire auth guards into all server actions (TODO(M5) markers present).
+
+- Symboli Rudolf (port+verify): M4 LOBBY made pixel-faithful to GAS. Built a true reference by rendering the ORIGINAL GAS files (index.html shell + CSS.html + real renderLobby/renderLeaderboard from JS.html) with OUR data mocked (scratch/gas-mock.html via scratch/dump.ts → scratch/gas-real.png). Then matched src/app/page.tsx 1:1: 3-col lobby-shell (left rail + content + right leaderboard widget), real card markup, champion card (#leader-top: bouncing 👑, % overlaid bar), colored rank rows (gold/silver/bronze/cream rowStyles). Copied GAS CSS classes verbatim into globals.css; added Font Awesome 6.5.2 CDN in layout. Screenshot-verified (scratch/shot-lobby3.png ≈ gas-real.png). Commits a962868, 8a66fe8. Verify method = Chrome headless --screenshot (no Playwright needed).
+
+### Next steps
+- Room/grading screen still = Teio's reinterpretation; port renderStudentGrid + openStudentModal the same faithful way (build GAS mock ref → match → screenshot-verify).
+- M5: NextAuth teacher login + auth guards.

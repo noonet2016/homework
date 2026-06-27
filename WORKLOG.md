@@ -58,3 +58,9 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 ### Next steps
 - Browser-test the full flow (npm run dev → add room → open room → add students/tasks → type scores). DB-write path proven by build typecheck; live UI click-through still pending.
 - M4: port GAS app UI styling/labels; M5: NextAuth teacher login + wire auth into every action (TODO(M5) markers present in all action files).
+
+- Symboli Rudolf (Drive MCP/Python/Prisma): DATA IMPORT — Trainer shared real GAS sheet (id 1WJMvsvPHqZynXx0mgbErCjLHHA6TiKDhxdopcnWeYkY, "ระบบเก็บคะแนนนักเรียน", owner krootos@tnw.ac.th). Read via Google Drive MCP (connected acct can access shared file). Downloaded as .xlsx (base64 too big for context → saved to scratch/source.xlsx), parsed all 15 sheets w/ openpyxl → scratch/sheets.json (2 meta sheets _LearnTrackingConfig/_LearnTrackingActivity + 13 room sheets). Sheet layout: col0=เลขที่, col1=รหัสนักเรียน, col2=ชื่อ-นามสกุล, col3..=task headers, then รวม + ชื่อเล่น. Added Student.code (รหัสนักเรียน) to schema (nullable, db push). scripts/import-sheet.ts (idempotent: wipe+reinsert; only non-zero score cells). Imported 13 rooms/124 tasks/477 students/1082 scores. Spot-check PASS (เด็กชายณัฐกิตติ์/โฟล์ค/code16445 = 5+10=15, matches source). scratch/ gitignored (student PII). Commit 3df0a4c. NOTE: tsx scripts need `import "dotenv/config"` — tsx doesn't auto-load .env (adapter crashes on undefined DATABASE_URL).
+
+### Next steps
+- Browser-test full flow with REAL data (npm run dev → localhost:3000 → open a room → see students/scores grid).
+- M4 UI port; M5 NextAuth + auth guards.

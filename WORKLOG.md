@@ -83,3 +83,9 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 ### Next steps
 - In-browser click test of room grid + score modal (verified via API, not yet via real click). Test admin/teacher mode (toggleAdminLogin) — currently no password backend (checkTeacherPassword stubbed) -> wire a simple teacher login (M5).
 - Decide cleanup of dead React pages. Image-upload fns (uploadTaskImage etc.) still stubbed — implement if the wife uses worksheet images.
+
+- Symboli Rudolf (ROOT-CAUSE FIX): reverted verbatim-GAS pivot back to React (Trainer wants clean React, RSC+server actions, that LOOKS like GAS). Found the real bug behind every "not identical" report: **Tailwind v4 silently dropped hand-written custom classes** (.lobby-shell/.left-rail/.rail-btn/.content-topbar/...) from globals.css — they were absent from served _next CSS (body{} survived, deceptive). So the floating shell + rail panel + active highlights never rendered. Fix: moved them to src/app/gas-theme.css (plain CSS, no Tailwind) + import in layout.tsx. Verified by headless-Chrome screenshot + PIL pixel-diff vs GAS reference (scratch/gas-real.png): mean diff 22.8 -> 3.5 (near-identical). Commit ed1eb64. Removed public/legacy + src/app/api/gas (recoverable from 84c62ff). Memory saved: reference-tailwind4-custom-css, feedback-ui-fidelity-verify.
+
+### Next steps (agreed plan)
+- Lobby is now pixel-faithful. Next: ROOM/grading screen — refactor renderStudentGrid + openStudentModal (GAS) into clean React (RSC + server actions for setScore/createStudent/...), screenshot+pixel-diff verify before moving on.
+- Then M5 teacher login. Clean up obsolete files (rooms/[id] old, roomThemes, StudentScoreModal) when room screen is rebuilt.

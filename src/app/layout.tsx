@@ -6,6 +6,7 @@ import "./drag.css";
 import { getSession } from "@/lib/auth";
 import TeacherAuthChip from "./TeacherAuthChip";
 import DeveloperModal from "./DeveloperModal";
+import DeveloperModalClient from "./DeveloperModalClient";
 import Loader from "./Loader";
 import ToastContainer from "./ToastContainer";
 
@@ -37,6 +38,7 @@ export default async function RootLayout({
         <TeacherAuthChip isTeacher={isTeacher} />
         <Loader />
         <ToastContainer />
+        <DeveloperModalClient />
         {children}
         {/* Global footer credit (ported verbatim from GAS index.html) */}
         <footer className="py-10 px-4 text-center relative z-30 print:hidden mt-auto">

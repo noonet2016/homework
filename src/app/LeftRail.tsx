@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import DeveloperModalClient from "./DeveloperModalClient";
 
 interface LeftRailProps {
   isTeacher: boolean;
@@ -19,11 +18,7 @@ export default function LeftRail({ isTeacher }: LeftRailProps) {
     }
   };
 
-  const devIconTrigger = (
-    <span className="rail-btn fa-btn cursor-pointer" title="ผู้พัฒนา">
-      <i className="fa-solid fa-code" />
-    </span>
-  );
+  const openDev = () => window.dispatchEvent(new CustomEvent("open-dev-modal"));
 
   return (
     <>
@@ -53,7 +48,13 @@ export default function LeftRail({ isTeacher }: LeftRailProps) {
         >
           <i className="fa-solid fa-user-shield" />
         </span>
-        <DeveloperModalClient buttonContent={devIconTrigger} />
+        <span
+          className="rail-btn fa-btn cursor-pointer"
+          title="ผู้พัฒนา"
+          onClick={openDev}
+        >
+          <i className="fa-solid fa-code" />
+        </span>
       </aside>
 
       {/* Guide Modal */}

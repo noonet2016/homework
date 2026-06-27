@@ -1,9 +1,14 @@
-import DeveloperModalClient from "./DeveloperModalClient";
+"use client";
 
+// Footer credit box — a trigger that opens the single global DeveloperModalClient
+// (mounted in layout) by dispatching the shared `open-dev-modal` event.
 export default function DeveloperModal() {
-  const triggerButton = (
+  const openDev = () => window.dispatchEvent(new CustomEvent("open-dev-modal"));
+
+  return (
     <button
       type="button"
+      onClick={openDev}
       className="inline-flex items-center justify-center gap-2 sm:gap-3 bg-white/40 backdrop-blur-xl px-4 sm:px-6 py-3 rounded-[2rem] border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all group cursor-pointer flex-wrap sm:flex-nowrap"
     >
       <span className="text-xs sm:text-sm font-black text-slate-800 tracking-tight whitespace-nowrap">
@@ -17,11 +22,5 @@ export default function DeveloperModal() {
         </span>
       </span>
     </button>
-  );
-
-  return (
-    <DeveloperModalClient
-      buttonContent={triggerButton}
-    />
   );
 }

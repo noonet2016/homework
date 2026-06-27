@@ -41,7 +41,8 @@ model Student {
   room     Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
   name     String
   nickname String?
-  number   Int?
+  number   Int?     // เลขที่ (roll number within room)
+  code     String?  // รหัสนักเรียน (school-wide student ID)
   scores   Score[]
 
   @@index([roomId])

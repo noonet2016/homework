@@ -16,6 +16,14 @@ const CARD_THEMES = [
   { chip: "from-[#f97316] to-[#ea580c]", bar: "from-[#22c55e] to-[#16a34a]" },
 ];
 
+// Leaderboard row styles copied verbatim from GAS renderLeaderboard (rowStyles).
+const ROW_STYLES = [
+  { bg: "linear-gradient(to bottom, #ffeb3b, #fbc02d)", border: "#f9a825", rankIcon: "🥇", nameColor: "#5d4037" },
+  { bg: "linear-gradient(to bottom, #e3f2fd, #bbdefb)", border: "#90caf9", rankIcon: "🥈", nameColor: "#1e3a5f" },
+  { bg: "linear-gradient(to bottom, #fff3e0, #ffccbc)", border: "#ffab91", rankIcon: "🥉", nameColor: "#7c2d12" },
+  { bg: "#fffaf0", border: "#ffe0b2", rankIcon: "", nameColor: "#1e3a5f" },
+];
+
 export default async function Home() {
   const rooms = await prisma.room.findMany({
     orderBy: { sortOrder: "asc" },
@@ -50,7 +58,6 @@ export default async function Home() {
       a.name.localeCompare(b.name, "th")
   );
   const champion = leaderboard[0];
-  const medals = ["🥇", "🥈", "🥉"];
 
   return (
     <main id="lobby" className="min-h-screen p-4 md:p-8">
@@ -234,50 +241,87 @@ export default async function Home() {
                 </span>
               </div>
 
-              <div className="p-5 flex flex-col gap-3 overflow-y-auto">
-                {/* Champion card */}
-                {champion && champion.studentCount > 0 && (
-                  <div className="rounded-2xl p-4 text-white bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-200/60">
-                    <div className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase opacity-90">
-                      <span className="animate-bounce">👑</span> Champion Class
+              <div className="p-4 md:p-5 flex flex-col gap-3 flex-1 overflow-y-auto bg-[#f8fafc]">
+                {/* Champion card (verbatim from GAS #leader-top) */}
+                {champion && (
+                  <div
+                    className="flex flex-col items-center p-4 rounded-[2rem] mb-2 border-2 border-amber-200 shadow-lg shadow-amber-100/50"
+                    style={{ background: "linear-gradient(180deg,#fffbeb, #fff7ed)" }}
+                  >
+                    <div className="text-5xl mb-1 drop-shadow-md animate-bounce">👑</div>
+                    <div className="text-[10px] font-black text-amber-600 tracking-[0.2em] mb-1">
+                      CHAMPION CLASS
                     </div>
-                    <p className="text-lg font-black leading-tight mt-1">{champion.name}</p>
-                    <div className="mt-2 w-full bg-white/30 rounded-full h-2">
+                    <div className="text-lg font-black text-slate-800 text-center leading-tight mb-2">
+                      {champion.icon} {champion.name}
+                    </div>
+                    <div className="w-full relative h-5 rounded-full overflow-hidden bg-slate-200 border border-slate-300">
                       <div
-                        className="bg-white h-2 rounded-full"
-                        style={{ width: `${champion.completion}%` }}
+                        className="absolute inset-y-0 left-0 transition-all duration-1000 bg-gradient-to-r from-blue-500 via-teal-400 to-amber-400"
+                        style={{ width: `${Math.min(champion.completion, 100)}%` }}
                       />
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-slate-700">
+                        {champion.completion}% complete
+                      </div>
                     </div>
-                    <p className="text-xs font-bold mt-1">{champion.completion}% complete</p>
                   </div>
                 )}
 
-                {/* Ranked rows */}
-                {leaderboard.slice(0, 10).map((room, idx) => (
-                  <Link
-                    key={room.id}
-                    href={`/rooms/${room.id}`}
-                    className="leader-row flex items-center gap-3 p-2.5 hover:shadow-md transition"
-                  >
-                    <div className="w-8 h-8 grid place-items-center rounded-full bg-slate-50 font-bold text-slate-600 text-sm shrink-0">
-                      {medals[idx] ?? idx + 1}
-                    </div>
-                    <div className="text-xl shrink-0">{room.icon}</div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-bold text-[#1f2e53] text-sm truncate">{room.name}</p>
-                      <p className="text-[11px] text-slate-400">
-                        {room.studentCount} นักเรียน
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] text-slate-400">Progress</p>
-                      <p className="font-black text-amber-500 text-sm">{room.completion}%</p>
-                    </div>
-                  </Link>
-                ))}
+                {/* Ranked rows (verbatim styling from GAS renderLeaderboard) */}
+                <div className="space-y-3">
+                  {leaderboard.slice(0, 10).map((room, idx) => {
+                    const s = ROW_STYLES[idx] ?? ROW_STYLES[3];
+                    return (
+                      <Link
+                        key={room.id}
+                        href={`/rooms/${room.id}`}
+                        className="w-full flex items-center gap-3 p-2 rounded-2xl transition-transform active:scale-95 shadow-[0_4px_0_rgba(0,0,0,0.2)] mb-1"
+                        style={{ background: s.bg, border: `2px solid ${s.border}` }}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-black text-lg border-2 border-white shadow-sm"
+                          style={{
+                            background: idx < 3 ? "transparent" : "#fff",
+                            color: idx < 3 ? "#fff" : "#1e3a5f",
+                          }}
+                        >
+                          {idx < 3 ? s.rankIcon : idx + 1}
+                        </div>
+                        <div className="w-10 h-10 flex items-center justify-center shrink-0 text-2xl drop-shadow-sm">
+                          {room.icon}
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p
+                            title={room.name}
+                            className="font-black text-sm leading-tight max-w-full overflow-hidden"
+                            style={{
+                              color: s.nameColor,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                            }}
+                          >
+                            {room.name}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0 px-2 border-l border-black/10">
+                          <p
+                            className="text-[9px] font-black uppercase opacity-60"
+                            style={{ color: s.nameColor }}
+                          >
+                            Progress
+                          </p>
+                          <p className="text-sm font-black" style={{ color: s.nameColor }}>
+                            {room.completion}%
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
 
                 {leaderboard.length === 0 && (
-                  <p className="text-center text-slate-400 text-sm py-8">
+                  <p className="text-center text-slate-500 text-sm py-8">
                     ยังไม่มีข้อมูลจัดอันดับ
                   </p>
                 )}

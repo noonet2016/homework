@@ -30,3 +30,23 @@
 
 ### Open questions
 - Subdomain name (proposed homework.thatnarai.net)? SSH on Plesk: tried, "Permission denied" (likely shell not /bin/bash or wrong system-user pw) — deferred to M6.
+
+## ========== CHECKPOINT (Trainer will /clear) — 2026-06-27 ==========
+Current task: Rebuilding the GAS homework app as Next.js + MySQL in projects/homework-next/. Paused after M3 first slice.
+
+State:
+- Stack PROVEN locally: Next.js 16.2.9 + React 19 + Tailwind, output:'standalone'. Prisma 7.8 + MySQL via @prisma/adapter-mariadb. Schema = User/Room/Student/Task/Score (GAS Sheet→relational). `prisma db push` + runtime smoke test + `npm run build` + prod-server render ALL pass. Thai/emoji ok (utf8mb4).
+- Done: M0 docs, M1 scaffold, M2 Prisma 7 (fully verified), M3 Room CRUD slice (server actions + lobby page, build+render verified). NOT yet UI-tested in a real browser.
+- Git: own repo at projects/homework-next (branch master), 3 commits, tree CLEAN. Latest 62284e0. Identity repo-local kanokkarn <unsojp777@gmail.com> (changeable).
+- Local dev: XAMPP MariaDB 10.4.28, DB homework_dev, DATABASE_URL in .env (gitignored). Must start XAMPP MySQL before `npm run dev`.
+- Prisma 5 fallback recipe recorded if Prisma 7 fails on deploy (feed = Prisma 5.22 + binaryTargets debian-openssl-*).
+
+Next steps (resume here):
+1. M3 continue: replicate proven slice → Students, Tasks, Scores (server actions + per-room pages).
+2. Optionally browser-test the Room slice (npm run dev → localhost:3000, add/delete room).
+3. M4 port UI from GAS app; M5 NextAuth teacher login + wire auth into every server action (TODOs marked in rooms.ts); M6 deploy to Plesk subdomain (homework.thatnarai.net) — START CMD = `node .next/standalone/server.js`, build LOCALLY then git-push; M7 retire GAS (keep archived).
+
+Open questions: subdomain name confirm; Plesk SSH access (got Permission denied — enable /bin/bash + set system-user pw, or ask Hostatom).
+
+Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xamppfiles/htdocs/feed. Old GAS app at projects/homework (KEEP as live fallback, do not delete).
+## ====================================================================

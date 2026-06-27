@@ -66,7 +66,7 @@ export default function DeveloperModal() {
                   <div className="w-full h-full bg-white/90 backdrop-blur-sm rounded-[1.8rem] flex items-center justify-center overflow-hidden shadow-inner">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="https://lh3.googleusercontent.com/d/1fbMKjuZYVmaH-T06ASdaaA3fOXhXR-L0=s600"
+                      src="/images/developer-taktan.png"
                       className="w-full h-full object-cover object-top transition-transform"
                       alt="ครูตั๊ก"
                     />

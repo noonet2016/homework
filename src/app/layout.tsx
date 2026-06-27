@@ -33,7 +33,7 @@ export default async function RootLayout({
         <TeacherAuthChip isTeacher={isTeacher} />
         {children}
         {/* Global footer credit (ported verbatim from GAS index.html) */}
-        <footer className="py-10 px-4 text-center relative z-10 print:hidden mt-auto">
+        <footer className="py-10 px-4 text-center relative z-30 print:hidden mt-auto">
           <div className="max-w-7xl mx-auto">
             <DeveloperModal />
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mt-6 opacity-50">

@@ -106,3 +106,12 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 - Done this session before audit: M4e (room edit/dup + RoomEditModal), M4f (reports), /reports rail link, leaderboard spacing -> space-y-3 (12px), teacher login verified (4-way test pass), teacher acct = krutaktan/taktan888 (test kru deleted), Mejiro budget-watch in glm-run.py (warn 9999N). Heads: 75b... build green.
 - AUDIT PLAN: compare React (src/app/*) vs GAS source (../homework/src/{index.html,CSS.html,JS.html} render fns) screen-by-screen: (1) Lobby (2) Room/grading + score modal (3) Reports. Reference render exists: scratch/gas-real.png (lobby). Dev server :3000 up; teacher cookie mintable via SESSION_SECRET in .env. Chrome headless for screenshots.
 - NEXT: dispatch audit -> produce punch list -> fix top items -> screenshot-verify -> commit per screen.
+
+## 2026-06-27 (cont) — Developer Modal Refactor & Alignment (Oguri Cap)
+- **Developer Modal RSC Refactor & Bugfix**:
+  - Refactored `DeveloperModal.tsx` into a Server Component (RSC) to serve static developer profile details directly from the server.
+  - Extracted state management to Client Component `DeveloperModalClient.tsx` (handles overlay toggle) and layout to `DeveloperModalContent.tsx`.
+  - Added `"use client";` to the top of `DeveloperModalContent.tsx` to safely handle image error triggers (`onError` fallback to Google Drive).
+  - Restored original React style (from `22.11.18.png` mock with purple gradient details, white cards with borders, rounded photos) instead of the flat GAS HTML styling.
+  - Adjusted `layout.tsx` footer `z-index` from `z-10` to `z-30` so that the modal overlay sits correctly in front of the lobby's `relative z-20` Leaderboard title button.
+  - Verified project build compiles cleanly (`npm run build` PASS).

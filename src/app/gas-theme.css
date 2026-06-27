@@ -109,3 +109,35 @@
 .global-auth-chip:hover .global-auth-text,
 .global-auth-chip:focus-within .global-auth-text,
 .global-auth-chip.is-open .global-auth-text { max-width: 170px; opacity: 1; transform: translateX(0); }
+
+/* ===== M4f Reports — circular progress chart + print ===== */
+.circle-chart {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(#10b981 var(--progress, 0deg), #f1f5f9 0deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.circle-chart::after {
+  content: "";
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  background: white;
+  border-radius: 50%;
+}
+.circle-chart-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+}
+@media print {
+  body { background: white !important; padding: 0 !important; }
+  #print-btn, .report-action-col { display: none !important; }
+  #report-view { display: block !important; padding: 0 !important; margin: 0 !important; width: 100% !important; }
+  .shadow-xl, .shadow-2xl, .shadow-lg { box-shadow: none !important; }
+  tr { page-break-inside: avoid; }
+}

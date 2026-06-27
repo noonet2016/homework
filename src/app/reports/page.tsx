@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import ReportsClientBridge from "./ReportsClientBridge";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -208,40 +209,7 @@ export default async function ReportsPage() {
         </div>
       </div>
 
-      {/* Client bridge for print + CSV download */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            document.getElementById('print-btn')?.addEventListener('click', () => window.print());
-            document.addEventListener('click', function(e) {
-              const csvBtn = e.target.closest('[data-action="csv"]');
-              if (!csvBtn) return;
-              try {
-                const roomData = JSON.parse(csvBtn.getAttribute('data-room'));
-                let csv = '\\uFEFF';
-                const headers = ['เลขที่','รหัสนักเรียน','ชื่อ-นามสกุล','ชื่อเล่น'];
-                roomData.taskNames.forEach(t => headers.push(t));
-                headers.push('คะแนนรวม');
-                csv += headers.map(h => '"' + h.replace(/"/g,'""') + '"').join(',') + '\\r\\n';
-                roomData.students.forEach(s => {
-                  const row = [s.number || '', s.code || '', s.name, s.nickname || ''];
-                  s.scores.forEach(val => row.push(val));
-                  row.push(s.totalScore);
-                  csv += row.map(v => '"' + String(v == null ? '' : v).replace(/"/g,'""') + '"').join(',') + '\\r\\n';
-                });
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.setAttribute('href', url);
-                link.setAttribute('download', 'Report_' + roomData.name + '.csv');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              } catch (err) { console.error('CSV Generation Error:', err); }
-            });
-          `,
-        }}
-      />
+      <ReportsClientBridge />
     </main>
   );
 }

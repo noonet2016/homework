@@ -87,7 +87,7 @@ export default async function Home() {
         <div className="lobby-shell">
           <div className="grid grid-cols-1 lg:grid-cols-[84px_1fr_360px] min-h-[880px]">
             {/* ===== Left rail ===== */}
-            <LeftRail isTeacher={isTeacher} />
+            <LeftRail isTeacher={isTeacher} usedIcons={roomStats.map((r) => r.icon)} />
 
             {/* ===== Center: rooms ===== */}
             <section className="p-5 md:p-6 border-r border-[#e6ecf6]">
@@ -102,7 +102,7 @@ export default async function Home() {
                     className="w-[260px] md:w-[340px] rounded-full border border-slate-300 px-4 py-2.5 text-base bg-white"
                     placeholder="Search"
                   />
-                  <TopbarActions isTeacher={isTeacher} />
+                  <TopbarActions isTeacher={isTeacher} usedIcons={roomStats.map((r) => r.icon)} />
                 </div>
               </div>
 

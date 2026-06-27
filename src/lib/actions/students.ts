@@ -64,3 +64,56 @@ export async function updateStudent(formData: FormData) {
   });
   revalidatePath(`/rooms/${roomId}`);
 }
+
+export async function createStudentsBulk(formData: FormData) {
+  await requireTeacher();
+  const roomId = String(formData.get("roomId") ?? "");
+  const raw = String(formData.get("lines") ?? "");
+  if (!roomId || !raw) return;
+
+  const rows = raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split(",").map((p) => p.trim());
+      const numberRaw = parts[0] && /^\d+$/.test(parts[0]) ? Number(parts[0]) : null;
+      // detect format: if first col is a number → number,code,name,nickname
+      if (numberRaw !== null && parts.length >= 3) {
+        return {
+          number: numberRaw,
+          code: parts[1] || null,
+          name: parts[2],
+          nickname: parts[3] || null,
+        };
+      }
+      // simple: just a name (or name,nickname)
+      return {
+        number: null,
+        code: null,
+        name: parts[0],
+        nickname: parts[1] || null,
+      };
+    })
+    .filter((r) => r.name);
+
+  if (rows.length === 0) return;
+
+  await prisma.student.createMany({
+    data: rows.map((r) => ({ roomId, ...r })),
+    skipDuplicates: true,
+  });
+  revalidatePath(`/rooms/${roomId}`);
+}
+
+export async function deleteStudents(formData: FormData) {
+  await requireTeacher();
+  const roomId = String(formData.get("roomId") ?? "");
+  const ids = String(formData.get("ids") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!roomId || ids.length === 0) return;
+  await prisma.student.deleteMany({ where: { id: { in: ids } } });
+  revalidatePath(`/rooms/${roomId}`);
+}

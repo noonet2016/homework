@@ -2,10 +2,18 @@
 
 /**
  * TopbarActions — client component for the topbar buttons that require onClick.
- * Matches GAS: fa-code (developer modal) + fa-user-shield (admin login).
- * Both dispatch custom events listened by DeveloperModalClient and TeacherAuthChip.
+ * Matches GAS: fa-circle-plus (add room, teacher only) + fa-code (developer modal) + fa-user-shield (admin login).
  */
-export default function TopbarActions({ isTeacher }: { isTeacher: boolean }) {
+export default function TopbarActions({
+  isTeacher,
+  usedIcons = [],
+}: {
+  isTeacher: boolean;
+  usedIcons?: string[];
+}) {
+  const openAddRoom = () =>
+    window.dispatchEvent(new CustomEvent("open-add-room-modal", { detail: { usedIcons } }));
+
   const openDev = () =>
     window.dispatchEvent(new CustomEvent("open-dev-modal"));
 
@@ -14,6 +22,19 @@ export default function TopbarActions({ isTeacher }: { isTeacher: boolean }) {
 
   return (
     <div className="flex items-center gap-2">
+      {/* Add room button — only visible when teacher (matches GAS #topbar-add-room-btn) */}
+      {isTeacher && (
+        <button
+          type="button"
+          onClick={openAddRoom}
+          title="เพิ่มห้องเรียน"
+          className="px-3 py-2 rounded-xl border border-violet-200 bg-violet-600 text-white hover:bg-violet-700 transition-colors flex items-center gap-1"
+        >
+          <i className="fa-solid fa-circle-plus sm:mr-1" />
+          <span className="hidden sm:inline text-sm font-semibold">ห้องเรียน</span>
+        </button>
+      )}
+
       {/* Developer button — fa-code (same as GAS) */}
       <button
         type="button"
@@ -24,20 +45,6 @@ export default function TopbarActions({ isTeacher }: { isTeacher: boolean }) {
         <i className="fa-solid fa-code" />
       </button>
 
-      {/* Admin / teacher auth button — fa-user-shield (same as GAS) */}
-      <button
-        type="button"
-        onClick={openAuth}
-        title={isTeacher ? "ออกจากระบบครู" : "เข้าสู่ระบบครู"}
-        className={[
-          "px-3 py-2 rounded-xl border fa-btn transition-colors",
-          isTeacher
-            ? "border-violet-300 bg-violet-600 text-white hover:bg-violet-700"
-            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50",
-        ].join(" ")}
-      >
-        <i className="fa-solid fa-user-shield" />
-      </button>
     </div>
   );
 }

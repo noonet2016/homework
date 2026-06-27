@@ -5,10 +5,14 @@ import Link from "next/link";
 
 interface LeftRailProps {
   isTeacher: boolean;
+  usedIcons?: string[];
 }
 
-export default function LeftRail({ isTeacher }: LeftRailProps) {
+export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
   const [guideOpen, setGuideOpen] = useState(false);
+
+  const handleAddRoom = () =>
+    window.dispatchEvent(new CustomEvent("open-add-room-modal", { detail: { usedIcons } }));
 
   const handleTeacherAuthClick = () => {
     // Select and click the global auth chip button to trigger login/logout
@@ -30,6 +34,15 @@ export default function LeftRail({ isTeacher }: LeftRailProps) {
           <i className="fa-solid fa-house" />
         </span>
         {isTeacher && (
+          <span
+            className="rail-btn fa-btn cursor-pointer"
+            title="เพิ่มห้องเรียน"
+            onClick={handleAddRoom}
+          >
+            <i className="fa-solid fa-circle-plus" />
+          </span>
+        )}
+        {isTeacher && (
           <Link href="/reports" className="rail-btn fa-btn" title="รายงานความก้าวหน้า">
             <i className="fa-solid fa-chart-simple" />
           </Link>
@@ -43,17 +56,23 @@ export default function LeftRail({ isTeacher }: LeftRailProps) {
         </span>
         <span
           className="rail-btn fa-btn cursor-pointer"
-          title="เข้าสู่โหมดคุณครู"
-          onClick={handleTeacherAuthClick}
-        >
-          <i className="fa-solid fa-user-shield" />
-        </span>
-        <span
-          className="rail-btn fa-btn cursor-pointer"
           title="ผู้พัฒนา"
           onClick={openDev}
         >
           <i className="fa-solid fa-code" />
+        </span>
+        <span
+          className="rail-btn fa-btn cursor-pointer"
+          title={isTeacher ? "ออกจากโหมดคุณครู" : "เข้าสู่โหมดคุณครู"}
+          onClick={handleTeacherAuthClick}
+        >
+          {isTeacher ? (
+            <span className="w-8 h-8 rounded-full bg-rose-100 grid place-items-center text-red-600">
+              <i className="fa-solid fa-right-from-bracket" style={{ fontSize: 16 }} />
+            </span>
+          ) : (
+            <i className="fa-solid fa-user-shield" />
+          )}
         </span>
       </aside>
 

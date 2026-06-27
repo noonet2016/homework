@@ -113,9 +113,6 @@ export default async function RoomPage({
             {isTeacher ? (
               <ClassroomManagerClient roomId={room.id} students={students} tasks={tasks} />
             ) : null}
-            <span className="hidden md:inline text-sm font-semibold text-slate-500">
-              กลับหน้าโฮม
-            </span>
           </div>
         </div>
 

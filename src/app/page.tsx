@@ -289,7 +289,7 @@ export default async function Home() {
                 )}
 
                 {/* Ranked rows (verbatim styling from GAS renderLeaderboard) */}
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {leaderboard.slice(0, 10).map((room, idx) => {
                     const s = ROW_STYLES[idx] ?? ROW_STYLES[3];
                     return (

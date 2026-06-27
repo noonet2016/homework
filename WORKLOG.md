@@ -89,3 +89,14 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 ### Next steps (agreed plan)
 - Lobby is now pixel-faithful. Next: ROOM/grading screen — refactor renderStudentGrid + openStudentModal (GAS) into clean React (RSC + server actions for setScore/createStudent/...), screenshot+pixel-diff verify before moving on.
 - Then M5 teacher login. Clean up obsolete files (rooms/[id] old, roomThemes, StudentScoreModal) when room screen is rebuilt.
+
+## 2026-06-27 (autonomous run — Trainer away)
+- POLICY CHANGE (Trainer via คุณเติ้ล + Rudolf live A/B): Mejiro/GLM-5.2 now PRIMARY for scoped code (on par w/ Teio on SWE-bench Pro, ~1/6 cost); Teio reserved for big multi-file refactors. Recorded in governance/team.md + memory policy-mejiro-primary-coder.
+- M4e room actions: Mejiro wrote updateRoomDetails + duplicateRoom in src/lib/actions/rooms.ts (Rudolf fixed slug prefix room-). Build green. Commit 183bf3a (bundled w/ Teio's teacher-gating + action-sheet ClassroomManagerClient = M4c task mgr + M4d add/edit/delete student UI).
+- M4f Reports: integrated Oguri's draft -> src/app/reports/page.tsx (RSC, summary cards + per-room table + CSV/print; fixed React.CSSProperties import). Added .circle-chart + @media print to gas-theme.css. Verified HTTP 200 + 477 students real data. Commit 3fb0ef9.
+- M4e UI in progress: added /reports link to lobby left-rail; added edit/duplicate/delete button group to teacher room cards (page.tsx); duplicateRoom wired as plain form. RoomEditModal.tsx delegated to Mejiro (bg) — pending integration + build.
+
+### State / Next steps
+- AWAITING Mejiro RoomEditModal.tsx -> write file -> npm run build -> screenshot-verify lobby teacher controls -> commit M4e.
+- Then remaining: M4g QR codes (if feasible), M4h quick-grade/status card. M4b/M4c/M4d already covered by Teio's ClassroomManagerClient (UI present; runtime click-test still pending).
+- DEPLOY reminder: build LOCALLY, start node .next/standalone/server.js; keep GAS app (projects/homework) as fallback.

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { createRoom, deleteRoom } from "@/lib/actions/rooms";
+import { createRoom, deleteRoom, duplicateRoom } from "@/lib/actions/rooms";
+import RoomEditModal from "./RoomEditModal";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +75,9 @@ export default async function Home() {
               <span className="rail-btn fa-btn active" title="หน้าหลัก">
                 <i className="fa-solid fa-house" />
               </span>
+              <Link href="/reports" className="rail-btn fa-btn" title="รายงานความก้าวหน้า">
+                <i className="fa-solid fa-chart-line" />
+              </Link>
               <span className="rail-btn fa-btn" title="คู่มือการใช้งาน">
                 <i className="fa-solid fa-book-open" />
               </span>
@@ -111,16 +115,29 @@ export default async function Home() {
                     className="relative w-full text-left rounded-[24px] bg-white border border-[#e9eef7] pt-14 pb-4 px-4 shadow-[0_10px_25px_rgba(92,108,143,0.12)] hover:shadow-[0_14px_30px_rgba(92,108,143,0.18)] hover:-translate-y-0.5 transition overflow-visible"
                   >
                     {isTeacher ? (
-                      <form action={deleteRoom} className="absolute right-3 top-3 z-10">
-                        <input type="hidden" name="id" value={room.id} />
-                        <button
-                          type="submit"
-                          title="ลบห้อง"
-                          className="text-slate-300 hover:text-red-500 text-lg leading-none px-1"
-                        >
-                          <i className="fa-solid fa-trash-can" />
-                        </button>
-                      </form>
+                      <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+                        <RoomEditModal id={room.id} name={room.name} icon={room.icon} />
+                        <form action={duplicateRoom}>
+                          <input type="hidden" name="id" value={room.id} />
+                          <button
+                            type="submit"
+                            title="ทำสำเนาห้อง"
+                            className="text-slate-300 hover:text-teal-500 text-lg leading-none px-1"
+                          >
+                            <i className="fa-solid fa-copy" />
+                          </button>
+                        </form>
+                        <form action={deleteRoom}>
+                          <input type="hidden" name="id" value={room.id} />
+                          <button
+                            type="submit"
+                            title="ลบห้อง"
+                            className="text-slate-300 hover:text-red-500 text-lg leading-none px-1"
+                          >
+                            <i className="fa-solid fa-trash-can" />
+                          </button>
+                        </form>
+                      </div>
                     ) : null}
 
                     <Link href={`/rooms/${room.id}`} className="block">

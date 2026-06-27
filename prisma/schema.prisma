@@ -1,0 +1,75 @@
+// Homework System (Next.js Edition) — Prisma schema
+// Maps the old GAS Google-Sheet model into a relational MySQL schema.
+// Prisma 7: WASM client + mariadb driver adapter (no Rust engine / binaryTargets).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Teacher / admin login (was the GAS license + teacher password).
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("TEACHER") // TEACHER | ADMIN
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// One classroom (was one Google Sheet tab).
+model Room {
+  id        String    @id @default(cuid())
+  name      String
+  icon      String?
+  sortOrder Int       @default(0)
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  students  Student[]
+  tasks     Task[]
+}
+
+// One student (was one row).
+model Student {
+  id       String  @id @default(cuid())
+  roomId   String
+  room     Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  name     String
+  nickname String?
+  number   Int?
+  scores   Score[]
+
+  @@index([roomId])
+}
+
+// One assignment / ใบงาน (was one column).
+model Task {
+  id        String  @id @default(cuid())
+  roomId    String
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  name      String
+  taskIndex Int     @default(0)
+  imageUrl  String? @db.Text
+  scores    Score[]
+
+  @@index([roomId])
+}
+
+// One score cell (was one Sheet cell): student x task.
+model Score {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  value     Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, taskId])
+  @@index([taskId])
+}

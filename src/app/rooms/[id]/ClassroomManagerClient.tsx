@@ -1,24 +1,264 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { createStudent, deleteStudent, updateStudent, createStudentsBulk } from "@/lib/actions/students";
-import { createTask, deleteTask, renameTask } from "@/lib/actions/tasks";
+import { createTask, deleteTask, deleteTasksBulk, saveTasksBatch, copyTasksFromRoom, clearTaskScores } from "@/lib/actions/tasks";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
+
+type RoomSummary = { id: string; name: string; icon: string | null };
 
 type ClassroomManagerClientProps = {
   roomId: string;
   students: StudentCardData[];
   tasks: TaskData[];
+  rooms: RoomSummary[];
 };
 
 type OpenModal = "sheet" | "tasks" | "addStudent" | "editStudent" | "bulkAdd" | "classQr" | null;
 
-export default function ClassroomManagerClient({ roomId, students, tasks }: ClassroomManagerClientProps) {
+export default function ClassroomManagerClient({ roomId, students, tasks, rooms }: ClassroomManagerClientProps) {
+  const router = useRouter();
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const [editingStudent, setEditingStudent] = useState<StudentCardData | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [qrUrls, setQrUrls] = useState<Record<string, string>>({});
+  const [localTasks, setLocalTasks] = useState<TaskData[]>(tasks);
+  const [sourceRoomId, setSourceRoomId] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [deleteConfirmTask, setDeleteConfirmTask] = useState<{ id: string; name: string } | null>(null);
+  const [clearConfirmTask, setClearConfirmTask] = useState<{ id: string; name: string } | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [imagePickerIdx, setImagePickerIdx] = useState<number | null>(null);
+  const [imagePickerUrl, setImagePickerUrl] = useState("");
+  const [taskSelectMode, setTaskSelectMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  // ── Task drag (Pointer Events + snap-rect animate — same pattern as RoomsGrid) ──
+  const taskCardEls = useRef<Map<string, HTMLDivElement>>(new Map());
+  const taskDraggingId = useRef<string | null>(null);
+  const taskHoverId = useRef<string | null>(null);
+  const taskCloneEl = useRef<HTMLElement | null>(null);
+  const taskOffset = useRef({ x: 0, y: 0 });
+  const taskSnapRects = useRef<Map<string, DOMRect>>(new Map());
+  const taskJustDropped = useRef(false);
+  const taskMoveHandler = useRef<((e: PointerEvent) => void) | null>(null);
+  const taskUpHandler = useRef<(() => void) | null>(null);
+  const localTasksRef = useRef(localTasks);
+  useEffect(() => { localTasksRef.current = localTasks; }, [localTasks]);
+
+  // When the tasks modal opens, reset localTasks to the latest tasks prop
+  useEffect(() => {
+    if (openModal === "tasks") { setLocalTasks(tasks); setTaskSelectMode(false); setSelectedTaskIds([]); }
+  }, [openModal, tasks]);
+
+  // After drop: clear inline transforms (cards now sit at their natural positions)
+  useLayoutEffect(() => {
+    if (!taskJustDropped.current) return;
+    taskJustDropped.current = false;
+    taskCardEls.current.forEach((el) => { el.style.transition = "none"; el.style.transform = ""; });
+  }, [localTasks]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (taskMoveHandler.current) window.removeEventListener("pointermove", taskMoveHandler.current);
+      if (taskUpHandler.current) window.removeEventListener("pointerup", taskUpHandler.current);
+      taskCloneEl.current?.remove();
+    };
+  }, []);
+
+  const applyTaskTransforms = (dragId: string, hoverTargetId: string) => {
+    const list = localTasksRef.current;
+    const preview = [...list];
+    const fi = preview.findIndex((t) => t.id === dragId);
+    const ti = preview.findIndex((t) => t.id === hoverTargetId);
+    if (fi === -1 || ti === -1) return;
+    const [moved] = preview.splice(fi, 1);
+    preview.splice(ti, 0, moved);
+    taskCardEls.current.forEach((el, id) => {
+      if (id === dragId) return;
+      const newIdx = preview.findIndex((t) => t.id === id);
+      const occupantId = list[newIdx]?.id;
+      if (!occupantId) return;
+      const from = taskSnapRects.current.get(id);
+      const to = taskSnapRects.current.get(occupantId);
+      if (!from || !to) return;
+      el.style.transition = "transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1)";
+      el.style.transform = `translateY(${to.top - from.top}px)`;
+    });
+  };
+
+  const resetTaskTransforms = () => {
+    taskCardEls.current.forEach((el, id) => {
+      if (id === taskDraggingId.current) return;
+      el.style.transition = "transform 180ms ease";
+      el.style.transform = "";
+    });
+  };
+
+  const startTaskDrag = (e: React.PointerEvent<HTMLSpanElement>, id: string) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const card = taskCardEls.current.get(id);
+    if (!card) return;
+    taskSnapRects.current.clear();
+    taskCardEls.current.forEach((el, tid) => taskSnapRects.current.set(tid, el.getBoundingClientRect()));
+    taskDraggingId.current = id;
+    taskHoverId.current = null;
+    const rect = taskSnapRects.current.get(id)!;
+    taskOffset.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    card.style.opacity = "0.3";
+    const clone = card.cloneNode(true) as HTMLElement;
+    clone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:9999;pointer-events:none;transition:none;box-shadow:0 8px 30px rgba(0,0,0,0.18);border-radius:12px;opacity:0.96;`;
+    document.body.appendChild(clone);
+    taskCloneEl.current = clone;
+    taskMoveHandler.current = (ev: PointerEvent) => {
+      if (taskCloneEl.current) {
+        taskCloneEl.current.style.left = `${ev.clientX - taskOffset.current.x}px`;
+        taskCloneEl.current.style.top = `${ev.clientY - taskOffset.current.y}px`;
+      }
+      const dragId = taskDraggingId.current;
+      if (!dragId) return;
+      const dragRect = taskSnapRects.current.get(dragId);
+      if (dragRect && ev.clientX >= dragRect.left && ev.clientX <= dragRect.right &&
+          ev.clientY >= dragRect.top && ev.clientY <= dragRect.bottom) {
+        if (taskHoverId.current !== null) { taskHoverId.current = null; resetTaskTransforms(); }
+        return;
+      }
+      let newHoverId: string | null = null;
+      taskSnapRects.current.forEach((r, tid) => {
+        if (tid === dragId) return;
+        if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom)
+          newHoverId = tid;
+      });
+      if (newHoverId === null || newHoverId === taskHoverId.current) return;
+      taskHoverId.current = newHoverId;
+      applyTaskTransforms(dragId, newHoverId);
+    };
+    taskUpHandler.current = () => {
+      window.removeEventListener("pointermove", taskMoveHandler.current!);
+      window.removeEventListener("pointerup", taskUpHandler.current!);
+      taskCloneEl.current?.remove(); taskCloneEl.current = null;
+      const dragCard = taskCardEls.current.get(taskDraggingId.current!);
+      if (dragCard) dragCard.style.opacity = "";
+      const dragId = taskDraggingId.current;
+      const hoverTargetId = taskHoverId.current;
+      taskDraggingId.current = null; taskHoverId.current = null;
+      if (!dragId || !hoverTargetId || dragId === hoverTargetId) { resetTaskTransforms(); return; }
+      const newTasks = [...localTasksRef.current];
+      const fi2 = newTasks.findIndex((t) => t.id === dragId);
+      const ti2 = newTasks.findIndex((t) => t.id === hoverTargetId);
+      const [item] = newTasks.splice(fi2, 1);
+      newTasks.splice(ti2, 0, item);
+      taskJustDropped.current = true;
+      setLocalTasks(newTasks);
+    };
+    window.addEventListener("pointermove", taskMoveHandler.current);
+    window.addEventListener("pointerup", taskUpHandler.current);
+  };
+
+  function handleLocalNameChange(idx: number, value: string) {
+    setLocalTasks((prev) => prev.map((t, i) => i === idx ? { ...t, name: value } : t));
+  }
+
+  function handleImageUrl(idx: number) {
+    setImagePickerIdx(idx);
+    setImagePickerUrl(localTasks[idx].imageUrl ?? "");
+  }
+
+  function closeImagePicker() {
+    setImagePickerIdx(null);
+    setImagePickerUrl("");
+  }
+
+  function applyImageUrl(url: string) {
+    if (imagePickerIdx === null) return;
+    setLocalTasks((prev) => prev.map((t, i) => i === imagePickerIdx ? { ...t, imageUrl: url || null } : t));
+    closeImagePicker();
+  }
+
+  function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { const d = String(ev.target?.result ?? ""); if (d) applyImageUrl(d); };
+    reader.readAsDataURL(file);
+  }
+
+async function handleSaveTasks() {
+    setIsSaving(true);
+    try {
+      await saveTasksBatch(roomId, localTasks.map((t, i) => ({
+        id: t.id, name: t.name, imageUrl: t.imageUrl, visible: t.visible, taskIndex: i + 1,
+      })));
+      router.refresh();
+      close();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleCopyFromRoom() {
+    if (!sourceRoomId) return;
+    setIsSaving(true);
+    try {
+      const newTasks = await copyTasksFromRoom(roomId, sourceRoomId);
+      if (newTasks && newTasks.length > 0) {
+        setLocalTasks((prev) => [...prev, ...newTasks]);
+      }
+      setSourceRoomId("");
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleBulkDeleteTasks() {
+    if (!selectedTaskIds.length) return;
+    setIsSaving(true);
+    try {
+      await deleteTasksBulk(roomId, selectedTaskIds);
+      setLocalTasks((prev) => prev.filter((t) => !selectedTaskIds.includes(t.id)));
+      setSelectedTaskIds([]);
+      setTaskSelectMode(false);
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleClearScores(taskId: string) {
+    const task = localTasks.find((t) => t.id === taskId);
+    if (task) setClearConfirmTask({ id: taskId, name: task.name });
+  }
+
+  async function confirmClearScores() {
+    if (!clearConfirmTask) return;
+    await clearTaskScores(clearConfirmTask.id, roomId);
+    setClearConfirmTask(null);
+    router.refresh();
+  }
+
+  async function handleDeleteTask(taskId: string) {
+    const task = localTasks.find((t) => t.id === taskId);
+    if (task) setDeleteConfirmTask({ id: taskId, name: task.name });
+  }
+
+  async function confirmDeleteTask() {
+    if (!deleteConfirmTask) return;
+    const fd = new FormData();
+    fd.set("id", deleteConfirmTask.id);
+    fd.set("roomId", roomId);
+    await deleteTask(fd);
+    setLocalTasks((prev) => prev.filter((t) => t.id !== deleteConfirmTask.id));
+    setDeleteConfirmTask(null);
+  }
+
+  async function handleAddTask(fd: FormData) {
+    await createTask(fd);
+    router.refresh();
+  }
 
   // Listen for selection-changed events from StudentGridClient
   useEffect(() => {
@@ -186,47 +426,151 @@ export default function ClassroomManagerClient({ roomId, students, tasks }: Clas
       {openModal === "tasks" && (
         <div id="task-manager-modal" className="fixed inset-0 z-[63] bg-black/60 flex items-center justify-center p-4">
           <div className="relative bg-white rounded-2xl p-5 w-full max-w-2xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop">
-            <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
+            <button type="button" onClick={close} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
+              <i className="fa-solid fa-xmark" />
+            </button>
             <h3 className="text-2xl font-black text-[#1e2d52] mb-1 flex items-center gap-2">
-              <i className="fa-solid fa-list-check text-indigo-500" /> จัดการงานของห้อง
+              <i className="fa-solid fa-bars-staggered text-indigo-500" /> จัดการงานของห้อง
             </h3>
-            <p className="text-slate-500 text-sm mb-3">เพิ่ม/ลบ/เรียงลำดับงานได้อิสระ และแต่ละห้องกำหนดจำนวนงานไม่เท่ากันได้</p>
-            <form action={createTask} className="flex items-center gap-2 mb-3">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-slate-500 text-sm">เพิ่ม/ลบ/เรียงลำดับงานได้อิสระ และแต่ละห้องกำหนดจำนวนงานไม่เท่ากันได้</p>
+              {localTasks.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setTaskSelectMode((m) => !m); setSelectedTaskIds([]); }}
+                  className={"ml-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors " + (taskSelectMode ? "bg-rose-50 border-rose-300 text-rose-600" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200")}
+                >
+                  <i className={"fa-solid " + (taskSelectMode ? "fa-xmark" : "fa-check-square")} />
+                  {taskSelectMode ? "ยกเลิกเลือก" : "เลือกลบ"}
+                </button>
+              )}
+            </div>
+
+            {/* Copy from room */}
+            <div className="flex items-center gap-2 mb-3">
+              <select
+                value={sourceRoomId}
+                onChange={(e) => setSourceRoomId(e.target.value)}
+                className="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                <option value="">เลือกห้องต้นทาง</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>{r.icon ? r.icon + " " : ""}{r.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleCopyFromRoom}
+                disabled={!sourceRoomId || isSaving}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-violet-700 disabled:opacity-40"
+              >
+                <i className="fa-solid fa-copy" /> คัดลอกจากห้องนี้
+              </button>
+            </div>
+
+            {/* Add task */}
+            <form action={handleAddTask} className="flex items-center gap-2 mb-4">
               <input type="hidden" name="roomId" value={roomId} />
-              <input name="name" className="flex-1 border rounded-lg px-3 py-2" placeholder="ชื่องานใหม่" required />
-              <button type="submit" className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold whitespace-nowrap shrink-0">
-                <i className="fa-solid fa-plus mr-1" />เพิ่มงาน
+              <input
+                name="name"
+                className="flex-1 border-2 border-indigo-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-indigo-500"
+                placeholder="ชื่องานใหม่"
+                required
+              />
+              <button type="submit" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700">
+                <i className="fa-solid fa-plus" /> เพิ่มงาน
               </button>
             </form>
-            <div className="overflow-y-auto min-h-0 space-y-2 pr-1">
-              {tasks.length === 0 ? (
-                <div className="text-slate-500 text-center py-6">ยังไม่มีงาน</div>
-              ) : tasks.map((task, idx) => (
-                <div key={task.id} className="flex items-center gap-2 border rounded-lg p-2 bg-slate-50">
-                  <span className="text-slate-400 text-sm px-1"><i className="fa-solid fa-grip-vertical" /></span>
-                  <span className="text-xs text-slate-500 w-8 text-center">{idx + 1}</span>
-                  <form action={renameTask} className="contents">
-                    <input type="hidden" name="id" value={task.id} />
-                    <input type="hidden" name="roomId" value={roomId} />
-                    <input name="name" defaultValue={task.name} className="flex-1 border rounded px-3 py-2" required />
-                    <button type="submit" className="px-2 py-2 rounded bg-white border" title="บันทึก">
-                      <i className="fa-solid fa-floppy-disk" />
-                    </button>
-                  </form>
-                  <form action={deleteTask}>
-                    <input type="hidden" name="id" value={task.id} />
-                    <input type="hidden" name="roomId" value={roomId} />
-                    <button type="submit" className="px-2 py-2 rounded bg-red-50 text-red-600 border border-red-200" title="ลบ">
-                      <i className="fa-solid fa-trash" />
-                    </button>
-                  </form>
+
+            {/* Task list */}
+            <div className="overflow-y-auto min-h-0 space-y-2 pr-1 flex-1">
+              {localTasks.length === 0 ? (
+                <div className="text-slate-500 text-center py-10 text-sm">
+                  <i className="fa-solid fa-inbox text-3xl mb-2 block text-slate-300" />
+                  ยังไม่มีงาน — เพิ่มได้เลยครับ
+                </div>
+              ) : localTasks.map((task, idx) => (
+                <div
+                  key={task.id}
+                  ref={(el) => { if (el) taskCardEls.current.set(task.id, el); else taskCardEls.current.delete(task.id); }}
+                  className={"flex items-center gap-1.5 border rounded-xl px-2 py-1.5 transition-colors " + (taskSelectMode && selectedTaskIds.includes(task.id) ? "bg-rose-50 border-rose-300" : "bg-slate-50 hover:bg-white")}
+                  onClick={taskSelectMode ? () => setSelectedTaskIds((prev) => prev.includes(task.id) ? prev.filter((x) => x !== task.id) : [...prev, task.id]) : undefined}
+                >
+                  {taskSelectMode ? (
+                    <span className="px-1 shrink-0">
+                      <i className={"fa-solid text-base " + (selectedTaskIds.includes(task.id) ? "fa-square-check text-rose-500" : "fa-square text-slate-300")} />
+                    </span>
+                  ) : (
+                    <span className="text-slate-300 cursor-grab px-1 shrink-0 touch-none select-none" onPointerDown={(e) => startTaskDrag(e, task.id)}><i className="fa-solid fa-grip-vertical" /></span>
+                  )}
+                  <span className="text-xs text-slate-400 w-6 text-center shrink-0 font-mono">{idx + 1}</span>
+                  <input
+                    type="text"
+                    value={task.name}
+                    onChange={taskSelectMode ? undefined : (e) => handleLocalNameChange(idx, e.target.value)}
+                    readOnly={taskSelectMode}
+                    className={"flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm min-w-0 focus:outline-none bg-white " + (taskSelectMode ? "cursor-pointer" : "focus:ring-2 focus:ring-indigo-400")}
+                  />
+                  {!taskSelectMode && (
+                    <>
+                      <button type="button" title={task.imageUrl ? "แก้ไข URL รูปภาพ" : "ตั้ง URL รูปภาพ"} onClick={() => handleImageUrl(idx)}
+                        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${task.imageUrl ? "bg-blue-100 border-blue-300 text-blue-600" : "bg-blue-50 border-blue-200 text-blue-400"}`}>
+                        <i className="fa-solid fa-image text-xs" />
+                      </button>
+                      <button type="button" title={task.imageUrl ? "ดูรูปใบงาน" : "ยังไม่มีรูปใบงาน"} onClick={() => task.imageUrl && setPreviewImageUrl(task.imageUrl)}
+                        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${task.imageUrl ? "bg-green-50 border-green-200 text-green-500 hover:bg-green-100 cursor-pointer" : "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed"}`}>
+                        <i className="fa-solid fa-eye text-xs" />
+                      </button>
+                      <button type="button" title="ล้างคะแนนทั้งหมดของงานนี้" onClick={() => handleClearScores(task.id)}
+                        className="w-8 h-8 rounded-lg border bg-amber-50 border-amber-200 text-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-100">
+                        <i className="fa-solid fa-eraser text-xs" />
+                      </button>
+                      <button type="button" onClick={() => handleDeleteTask(task.id)}
+                        className="w-8 h-8 rounded-lg border bg-red-50 border-red-200 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-100">
+                        <i className="fa-solid fa-trash text-xs" />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex justify-end gap-2 border-t pt-3">
-              <button type="button" onClick={close} className="px-4 py-2 rounded bg-slate-200 font-semibold">
-                <i className="fa-solid fa-xmark mr-1" />ปิด
-              </button>
+
+            {/* Footer */}
+            <div className="mt-4 flex justify-between gap-2 border-t pt-3">
+              <div className="flex items-center gap-2">
+                {taskSelectMode && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTaskIds(selectedTaskIds.length === localTasks.length ? [] : localTasks.map((t) => t.id))}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200"
+                  >
+                    <i className="fa-solid fa-check-double" />
+                    {selectedTaskIds.length === localTasks.length ? "ยกเลิกทั้งหมด" : "เลือกทั้งหมด"}
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {taskSelectMode ? (
+                  <button
+                    type="button"
+                    onClick={handleBulkDeleteTasks}
+                    disabled={!selectedTaskIds.length || isSaving}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-40"
+                  >
+                    <i className="fa-solid fa-trash" /> {isSaving ? "กำลังลบ..." : `ลบที่เลือก (${selectedTaskIds.length})`}
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" onClick={close} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300">
+                      <i className="fa-solid fa-xmark" /> ยกเลิก
+                    </button>
+                    <button type="button" onClick={handleSaveTasks} disabled={isSaving}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:opacity-50">
+                      <i className="fa-solid fa-floppy-disk" /> {isSaving ? "กำลังบันทึก..." : "บันทึกงาน"}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -307,6 +651,125 @@ export default function ClassroomManagerClient({ roomId, students, tasks }: Clas
               <input type="hidden" name="roomId" value={roomId} />
             </form>
           )}
+        </div>
+      )}
+
+      {/* ===== Image Picker Modal (upload file OR enter URL) ===== */}
+      {imagePickerIdx !== null && (
+        <div className="fixed inset-0 z-[76] bg-black/60 flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+            <button type="button" onClick={closeImagePicker} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
+              <i className="fa-solid fa-xmark" />
+            </button>
+            <h3 className="text-xl font-black text-[#1e2d52] mb-1 flex items-center gap-2">
+              <i className="fa-solid fa-image text-blue-500" /> รูปใบงาน
+            </h3>
+            <p className="text-slate-500 text-sm mb-5">
+              &ldquo;{imagePickerIdx !== null ? localTasks[imagePickerIdx]?.name : ""}&rdquo;
+            </p>
+
+            {/* Upload from device */}
+            <label className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 text-blue-600 font-semibold text-sm cursor-pointer hover:bg-blue-100 transition-colors mb-4">
+              <i className="fa-solid fa-upload" /> เลือกไฟล์จากเครื่อง
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
+            </label>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-xs text-slate-400 font-semibold">หรือ</span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+
+            {/* URL input */}
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={imagePickerUrl}
+                onChange={(e) => setImagePickerUrl(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="flex-1 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              />
+              <button type="button" onClick={() => applyImageUrl(imagePickerUrl.trim())}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shrink-0">
+                ตกลง
+              </button>
+            </div>
+
+            {/* Preview current */}
+            {imagePickerUrl && (
+              <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 max-h-48">
+                <img src={imagePickerUrl} alt="preview" className="w-full object-contain max-h-48" onError={(e) => (e.currentTarget.style.display = "none")} />
+              </div>
+            )}
+
+            {/* Remove button */}
+            {localTasks[imagePickerIdx ?? 0]?.imageUrl && (
+              <button type="button" onClick={() => applyImageUrl("")}
+                className="mt-3 w-full py-2 rounded-xl border border-red-200 text-red-500 text-sm font-semibold hover:bg-red-50">
+                <i className="fa-solid fa-trash-can mr-1" /> ลบรูปออก
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Image Preview Modal ===== */}
+      {previewImageUrl && (
+        <div className="fixed inset-0 z-[75] bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewImageUrl(null)}>
+          <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setPreviewImageUrl(null)} className="absolute -right-3 -top-3 w-9 h-9 flex items-center justify-center rounded-full bg-white text-slate-700 shadow-lg hover:bg-slate-100 z-10">
+              <i className="fa-solid fa-xmark" />
+            </button>
+            <img src={previewImageUrl} alt="ใบงาน" className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl" />
+          </div>
+        </div>
+      )}
+
+      {/* ===== Delete Task Confirm Modal ===== */}
+      {deleteConfirmTask && (
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+            <button type="button" onClick={() => setDeleteConfirmTask(null)} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
+              <i className="fa-solid fa-xmark" />
+            </button>
+            <h3 className="text-2xl font-black text-[#1e2d52] mb-2 flex items-center gap-2">
+              <i className="fa-solid fa-trash-can text-red-500" /> ยืนยันการลบงาน
+            </h3>
+            <p className="text-slate-700 mb-2">ต้องการลบ &ldquo;{deleteConfirmTask.name}&rdquo; ใช่หรือไม่?</p>
+            <p className="text-red-500 text-sm font-semibold mb-6">หมายเหตุ: คะแนนของงานนี้จะถูกลบออกจากนักเรียนทุกคนในห้อง</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setDeleteConfirmTask(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300">
+                <i className="fa-solid fa-xmark" /> ยกเลิก
+              </button>
+              <button type="button" onClick={confirmDeleteTask} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700">
+                <i className="fa-solid fa-trash-can" /> ยืนยันลบ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Clear Scores Confirm Modal ===== */}
+      {clearConfirmTask && (
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+            <button type="button" onClick={() => setClearConfirmTask(null)} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
+              <i className="fa-solid fa-xmark" />
+            </button>
+            <h3 className="text-2xl font-black text-[#1e2d52] mb-2 flex items-center gap-2">
+              <i className="fa-solid fa-eraser text-amber-500" /> ยืนยันการล้างคะแนน
+            </h3>
+            <p className="text-slate-700 mb-2">ต้องการล้างคะแนนทั้งหมดของ &ldquo;{clearConfirmTask.name}&rdquo; ใช่หรือไม่?</p>
+            <p className="text-red-500 text-sm font-semibold mb-6">หมายเหตุ: คะแนนทุกคนในงานนี้จะถูกรีเซ็ตเป็น 0 ไม่สามารถย้อนกลับได้</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setClearConfirmTask(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300">
+                <i className="fa-solid fa-xmark" /> ยกเลิก
+              </button>
+              <button type="button" onClick={confirmClearScores} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600">
+                <i className="fa-solid fa-eraser" /> ยืนยันล้างคะแนน
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

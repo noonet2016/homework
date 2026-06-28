@@ -34,6 +34,8 @@ export default async function RoomPage({
           id: true,
           name: true,
           taskIndex: true,
+          imageUrl: true,
+          visible: true,
         },
       },
     },
@@ -41,10 +43,18 @@ export default async function RoomPage({
 
   if (!room) notFound();
 
+  const allRooms = await prisma.room.findMany({
+    where: { id: { not: id } },
+    select: { id: true, name: true, icon: true },
+    orderBy: { sortOrder: "asc" },
+  });
+
   const tasks: TaskData[] = room.tasks.map((task) => ({
     id: task.id,
     name: task.name,
     taskIndex: task.taskIndex,
+    imageUrl: task.imageUrl,
+    visible: task.visible,
   }));
   const taskCount = tasks.length;
 
@@ -111,7 +121,7 @@ export default async function RoomPage({
 
           <div className="flex items-center gap-2">
             {isTeacher ? (
-              <ClassroomManagerClient roomId={room.id} students={students} tasks={tasks} />
+              <ClassroomManagerClient roomId={room.id} students={students} tasks={tasks} rooms={allRooms} />
             ) : null}
           </div>
         </div>

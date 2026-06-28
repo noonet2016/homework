@@ -55,7 +55,8 @@ model Task {
   room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
   name      String
   taskIndex Int     @default(0)
-  imageUrl  String? @db.Text
+  imageUrl  String? @db.MediumText
+  visible   Boolean @default(true)
   scores    Score[]
 
   @@index([roomId])

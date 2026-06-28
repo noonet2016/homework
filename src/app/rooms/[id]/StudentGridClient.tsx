@@ -7,6 +7,8 @@ export type TaskData = {
   id: string;
   name: string;
   taskIndex: number;
+  imageUrl: string | null;
+  visible: boolean;
 };
 
 export type StudentCardData = {

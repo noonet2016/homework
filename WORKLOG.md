@@ -190,3 +190,18 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 > **UNRESOLVED ISSUE (Suspended as per Trainer's request):**
 > The "Remember login for 10 minutes" feature does not persist the login state reliably upon reloading or closing/re-opening the tab in some browser environments. Despite disabling cookie `secure` flags and client-side transition workarounds, the browser still fails to autofill or preserve the session consistently. This task has been put on hold to avoid further resource wastage.
 
+
+## 2026-06-28
+
+- Rudolf (Edit): Fixed LeftRail logout icon not changing on teacher login — conditional `fa-right-from-bracket` vs `fa-user-shield`.
+- Rudolf (Edit): Fixed rail danger color — added `.rail-btn.rail-danger` CSS class (Tailwind can't dynamic-class); then switched to inner `bg-rose-100` circle span for full-circle display.
+- Rudolf (CSS): Fixed `global-auth-chip` collapsed state — 44×44px perfect circle, `padding:0`, `justify-content:center`; expanded state 230px with proper padding.
+- Rudolf (Write): Created `AddRoomModal.tsx` — singleton modal (dispatches `open-add-room-modal` event), 59-emoji icon picker matching GAS ROOM_ICONS, filters used icons.
+- Rudolf (Edit): `TopbarActions.tsx` — added `fa-circle-plus` button (teacher only), removed duplicate `fa-user-shield`.
+- Rudolf (Edit): `LeftRail.tsx` — added `fa-circle-plus` (teacher only), reordered buttons, swapped ผู้พัฒนา↔ออกจากระบบ.
+- Rudolf (Edit): `reports/page.tsx` — extracted `<script dangerouslySetInnerHTML>` to `ReportsClientBridge.tsx` (Client Component); fixes React RSC console error.
+- Rudolf (Edit): `rooms/[id]/page.tsx` — removed "กลับหน้าโฮม" text from topbar.
+- Rudolf (Write+Edit): Full action sheet rebuild — 5 buttons (จัดการงาน, เลือกหลายคน, QR ทั้งห้อง, เพิ่มนักเรียน, เพิ่มหลายคน) matching GAS order; select mode via custom events; bulk add CSV modal; QR codes via `qrcode` npm.
+- Rudolf (Edit): `students.ts` — added `createStudentsBulk` and `deleteStudents` Server Actions (both guarded with `requireTeacher()`).
+- Rudolf (Edit): Action sheet `z-[1000002]` — above TeacherAuthChip so logout chip hides behind panel when open.
+- Commit: 14a964f — feat: action sheet full feature set + UI polish pass

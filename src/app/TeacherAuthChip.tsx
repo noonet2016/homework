@@ -20,6 +20,16 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
       if (Date.now() - parseInt(savedTime, 10) < 10 * 60 * 1000) {
         setPassword(savedPass);
         setRemember(true);
+        // Auto-login ทันทีถ้ายังไม่ได้เป็นครู
+        if (!isTeacher) {
+          const fd = new FormData();
+          fd.append("username", "krutaktan");
+          fd.append("password", savedPass);
+          fd.append("remember", "on");
+          login({}, fd).then((res) => {
+            if (res.ok) router.refresh();
+          });
+        }
       } else {
         localStorage.removeItem("LT_ADMIN_PASS_REMEMBER");
         localStorage.removeItem("LT_ADMIN_PASS_TIME");
@@ -233,10 +243,6 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                 type="button"
                 onClick={() => {
                   setShowLogoutConfirm(false);
-                  localStorage.removeItem("LT_ADMIN_PASS_REMEMBER");
-                  localStorage.removeItem("LT_ADMIN_PASS_TIME");
-                  setPassword("");
-                  setRemember(false);
                   logout().then(() => {
                     if (typeof window !== "undefined" && (window as any).notify) {
                       (window as any).notify("ออกจากโหมดคุณครูแล้ว", "info");

@@ -38,6 +38,8 @@ export default function StudentScoreModal({
     const value = Number(values[task.id] || "0");
     return sum + (Number.isFinite(value) ? value : 0);
   }, 0);
+  const [firstName, ...lastNameParts] = student.name.trim().split(/\s+/);
+  const lastName = lastNameParts.join(" ");
 
   function closeModal() {
     if (!isPending) onClose();
@@ -64,41 +66,39 @@ export default function StudentScoreModal({
     >
       <div
         id="modal-content"
-        className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl animate-modal-pop"
+        className="flex h-[92dvh] w-full max-w-md flex-col gap-2 animate-modal-pop"
       >
-        <div className="flex flex-col h-[92vh] max-h-[92vh] md:h-auto md:max-h-[92vh]">
-          <div className="p-4 md:p-5 border-b border-slate-200 shrink-0">
-            <div className="flex justify-between items-start gap-2 mb-1">
+        <div className="flex justify-end shrink-0">
+          <button
+            type="button"
+            onClick={closeModal}
+            className="grid h-11 w-11 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-lg transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:opacity-60"
+            disabled={isPending}
+            aria-label="Close"
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div className="shrink-0 border-b border-slate-200 p-4 md:p-5">
+            <div className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-3 mb-3 md:grid-cols-[minmax(0,1fr)_132px]">
               <h3
                 title={student.name}
-                className="font-bold leading-[1.5] text-xl md:text-2xl"
-                style={{
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}
+                className="min-w-0 font-bold leading-tight text-xl md:text-2xl"
               >
-                {student.name}
+                <span className="block truncate">{firstName || student.name}</span>
+                {lastName ? <span className="block truncate">{lastName}</span> : null}
               </h3>
-              <div className="flex items-center gap-2">
-                <div className="text-right">
-                  <p className="text-[11px] text-slate-500">คะแนนรวมปัจจุบัน</p>
-                  <p
-                    id="student-modal-total-score"
-                    className="text-xl md:text-2xl font-black text-amber-600 leading-tight"
-                  >
-                    {total}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="modal-close-btn"
-                  aria-label="Close"
+              <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-3 py-2 text-center shadow-sm">
+                <p className="text-[10px] font-bold leading-tight text-slate-500">คะแนนรวม</p>
+                <p className="text-[10px] font-bold leading-tight text-slate-400">ปัจจุบัน</p>
+                <p
+                  id="student-modal-total-score"
+                  className="mt-1 text-3xl font-black leading-none text-amber-600"
                 >
-                  ✕
-                </button>
+                  {total}
+                </p>
               </div>
             </div>
             <p className="text-slate-500 text-sm mb-1 flex flex-wrap gap-x-3">
@@ -110,7 +110,7 @@ export default function StudentScoreModal({
             </p>
           </div>
 
-          <div className="p-4 md:p-5 overflow-y-auto min-h-0 bg-slate-50/60">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-4 md:p-5">
             {isTeacher ? (
               tasks.length === 0 ? (
                 <div className="border rounded-xl p-2.5 mb-2 bg-white text-center text-slate-500">
@@ -213,19 +213,9 @@ export default function StudentScoreModal({
             })()}
           </div>
 
-          <div className="p-4 md:p-5 border-t border-slate-200 bg-white shrink-0">
-            <div className={`grid grid-cols-1 ${isTeacher ? "sm:grid-cols-2" : ""} gap-2`}>
-              {isTeacher ? (
-                <button
-                  type="button"
-                  className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-lg font-semibold opacity-60"
-                  disabled
-                >
-                  <i className="fa-solid fa-qrcode mr-2" />
-                  สร้าง QR ให้คะแนนด่วน
-                </button>
-              ) : null}
-              {isTeacher ? (
+          {isTeacher && (
+            <div className="shrink-0 border-t border-slate-200 bg-white p-4 md:p-5">
+              <div className="grid grid-cols-1 gap-2">
                 <button
                   type="button"
                   onClick={saveScores}
@@ -235,17 +225,9 @@ export default function StudentScoreModal({
                   <i className="fa-solid fa-floppy-disk mr-2" />
                   {isPending ? "บันทึก..." : "บันทึก"}
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold"
-                >
-                  ปิด
-                </button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -291,6 +273,7 @@ export default function StudentScoreModal({
           </div>
         </div>
       )}
+
     </>
   );
 }

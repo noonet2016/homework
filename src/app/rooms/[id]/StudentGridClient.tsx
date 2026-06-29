@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import StudentScoreModal from "./StudentScoreModal";
 
 export type TaskData = {
@@ -25,6 +25,7 @@ export type StudentCardData = {
 
 type StudentGridClientProps = {
   roomId: string;
+  roomName: string;
   students: StudentCardData[];
   tasks: TaskData[];
   isTeacher: boolean;
@@ -60,12 +61,14 @@ function getRankBadge(index: number) {
 
 export default function StudentGridClient({
   roomId,
+  roomName,
   students,
   tasks,
   isTeacher,
 }: StudentGridClientProps) {
   const [query, setQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<StudentCardData | null>(null);
+  const autoOpenedRef = useRef(false);
   const totalAssignedTasks = tasks.length;
 
   useEffect(() => {
@@ -89,6 +92,19 @@ export default function StudentGridClient({
       mobile?.removeEventListener("input", handleInput);
     };
   }, []);
+
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode");
+    const studentId = params.get("studentId");
+    if (mode !== "grade" || !studentId) return;
+
+    const student = students.find((item) => String(item.id) === String(studentId));
+    if (!student) return;
+    autoOpenedRef.current = true;
+    setSelectedStudent(student);
+  }, [students]);
 
   const filteredStudents = useMemo(() => {
     const needle = query.trim().toLowerCase();

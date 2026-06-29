@@ -142,6 +142,7 @@ export default async function RoomPage({
 
         <StudentGridClient
           roomId={room.id}
+          roomName={room.name}
           students={students}
           tasks={tasks}
           isTeacher={isTeacher}

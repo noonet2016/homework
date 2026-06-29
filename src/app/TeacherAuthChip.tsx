@@ -74,7 +74,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
 
   return (
     <>
-      <div className="global-auth-chip fixed right-3 top-3 z-[1000001]">
+      <div className="global-auth-chip fixed right-3 bottom-4 md:bottom-auto md:top-3 z-[1000001]">
         <button
           onClick={() =>
             isTeacher

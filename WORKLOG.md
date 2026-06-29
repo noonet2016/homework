@@ -205,3 +205,39 @@ Reference: proven sibling app feed (pr.thatnarai.net) at /Applications/XAMPP/xam
 - Rudolf (Edit): `students.ts` — added `createStudentsBulk` and `deleteStudents` Server Actions (both guarded with `requireTeacher()`).
 - Rudolf (Edit): Action sheet `z-[1000002]` — above TeacherAuthChip so logout chip hides behind panel when open.
 - Commit: 14a964f — feat: action sheet full feature set + UI polish pass
+
+## 2026-06-28 (ช่วงดึก — session นี้)
+
+- Rudolf (Edit/tasks.ts): copyTasksFromRoom เปลี่ยน createMany → $transaction + return created tasks → modal ไม่ปิดหลัง copy แสดงรายการงานที่คัดลอกมาทันที
+- Rudolf (Edit/tasks.ts): saveTasksBatch เปลี่ยน Promise.all → $transaction แก้ EPIPE error
+- Rudolf (Edit/tasks.ts): เพิ่ม deleteTasksBulk server action (deleteMany by ids)
+- Rudolf (Edit/ClassroomManagerClient.tsx): Task modal เพิ่ม bulk-select mode — ปุ่ม "เลือกลบ", checkbox ต่อ row, select-all, ปุ่ม "ลบที่เลือก (N)" สีแดงใน footer; optimistic update localTasks
+- Rudolf (Edit/next.config.ts): เพิ่ม serverActions.bodySizeLimit: "10mb" แก้ Body exceeded 1MB error
+- Rudolf (Edit/StudentScoreModal.tsx): non-teacher view เปลี่ยนเป็น split panel ส่งแล้ว/ค้างส่ง; แสดงคะแนนข้าง task ที่ส่งแล้ว; ปุ่ม "ใบงาน" ทั้งสองฝั่ง
+- Rudolf (Edit/StudentScoreModal.tsx): lightbox ดูภาพใบงานใหญ่ + ปุ่มดาวน์โหลด + ปุ่มพิมพ์ (เขียน HTML+onload ก่อน print ไม่ขาวโพลน)
+- Rudolf (Edit/TeacherAuthChip.tsx): auto-login on mount จาก localStorage ถ้า remember ยังไม่หมด 10 นาที; logout ไม่ล้าง localStorage → เปิดใหม่ password ยัง pre-fill
+- Commit: f8affa7 — feat: task bulk-delete, copy-from-room fix, student view, auth remember
+
+## ========== CHECKPOINT (Trainer พักผ่อน) — 2026-06-28 ==========
+Current task: homework-next project (projects/homework-next/, served :3000)
+
+State:
+- Build ✅ clean (Next.js 16.2.9 Turbopack)
+- Features completed this session: bulk-delete tasks, copy-from-room stays open, student non-teacher split-panel view (ส่งแล้ว/ค้างส่ง + คะแนน + lightbox ใบงาน + print), auth remember-10min auto-login
+- commit f8affa7 on branch master
+
+Known issues / deferred:
+- aria-hidden warning บน hidden autofill form (harmless, ควรเปลี่ยน aria-hidden → inert)
+- Test hooks (?cN/?okN/?perfect/?demo5) ยังอยู่ใน TEDET index.html — ต้องลบก่อน deploy
+- สสวท. copyright — private use OK, public deploy ต้องตรวจก่อน
+
+Next steps (เมื่อ Trainer กลับมา):
+- ทดสอบ remember-login ใน production (Hostatom/Plesk) ว่า cookie persist ได้ไหม
+- Deploy ถ้า Trainer พร้อม (build local → node .next/standalone/server.js)
+- หรือขยาย TEDET coach ไปปี 2567
+
+## 2026-06-29
+
+- Tokai Teio (GAS Pull/Edit/Build): Pulled GAS Cloud deployed version `V43` into `../homework/src` with `clasp pull --versionNumber 43` after backing up the previous local source to `../homework/scratch/pre-pull-v43-20260629-203934`. Confirmed V43 QR flow: `mode=grade` routes to `openQuickAuthForGrade()` and requires teacher login, while `mode=view` routes to `renderStudentStatusCard()` for the student-facing status interface. Updated `homework-next` to match: the "สร้าง QR ให้คะแนนด่วน" button opens `QuickGradeQrModal.tsx` with two QR codes, `/grade/<roomId>/<studentId>` for teachers and `/view/<roomId>/<studentId>` for students. Added the quick-grade route and student-status route; teacher quick grade opens the teacher auth modal when not logged in. `npm run build` PASSED.
+- Oguri Cap (Edit/Build): Removed the "สร้าง QR ให้คะแนนด่วน" button and its QuickGradeQrModal component from StudentScoreModal.tsx to save space. Removed the redundant "ปิด" button when isTeacher is false, hiding the footer entirely in student view. Re-positioned TeacherAuthChip to fixed right-3 bottom-4 (desktop md:top-3) to prevent overlapping with back/header buttons on mobile. `npm run build` PASSED.
+

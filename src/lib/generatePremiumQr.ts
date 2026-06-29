@@ -1,4 +1,4 @@
-type RoundRadii = number | { tl?: number; tr?: number; br?: number; bl?: number };
+export type RoundRadii = number | { tl?: number; tr?: number; br?: number; bl?: number };
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -124,6 +124,112 @@ export function generatePremiumQrDataUrl(
           700,
           canvas.height - bottomSafePadding,
         );
+
+        resolve(canvas.toDataURL("image/png"));
+      } catch (err) {
+        reject(err);
+      }
+    };
+    qrImg.onerror = () => reject(new Error("โหลดภาพ QR ไม่ได้"));
+    qrImg.src = qrSrc.startsWith("data:") ? qrSrc : `${qrSrc}${qrSrc.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  });
+}
+
+// Compact print card — 800×478px landscape (fits 10 cards = 5 students per A4 page, 2 cols × 5 rows)
+export function generatePrintQrDataUrl(
+  qrSrc: string,
+  titleText: string,
+  roomName: string,
+  noText: string,
+  codeText: string,
+  nameText: string,
+  nickText: string,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const qrImg = new Image();
+    qrImg.crossOrigin = "anonymous";
+    qrImg.onload = () => {
+      try {
+        const W = 800, H = 478;
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d")!;
+
+        const isTeacher = (titleText || "").includes("ครู");
+        const color = isTeacher ? "#4f46e5" : "#059669";
+        const lightBg = isTeacher ? "#eef2ff" : "#ecfdf5";
+
+        // Card background
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0,0,0,0.08)";
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetY = 4;
+        roundRect(ctx, 8, 8, W - 16, H - 16, 22, true, false);
+        ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+        // Header strip
+        ctx.fillStyle = color;
+        roundRect(ctx, 8, 8, W - 16, 62, { tl: 22, tr: 22, bl: 0, br: 0 }, true, false);
+
+        // Header text
+        ctx.fillStyle = "#ffffff";
+        ctx.font = 'bold 28px "Noto Sans Thai", sans-serif';
+        ctx.textAlign = "left";
+        ctx.fillText(isTeacher ? "🚀 TEACHER — ให้คะแนนด่วน" : "🎓 STUDENT — ดูคะแนน", 24, 48);
+
+        // QR area (left)
+        const qrSize = 330;
+        const qrX = 24, qrY = 78;
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        roundRect(ctx, qrX, qrY, qrSize, qrSize, 14, true, true);
+        ctx.drawImage(qrImg, qrX + 10, qrY + 10, qrSize - 20, qrSize - 20);
+
+        // Info section (right of QR)
+        const infoX = qrX + qrSize + 22;
+        const infoW = W - infoX - 20;
+        let ty = 100;
+
+        // Room pill
+        ctx.fillStyle = lightBg;
+        roundRect(ctx, infoX, ty - 24, infoW, 38, 10, true, false);
+        ctx.fillStyle = color;
+        ctx.font = 'bold 22px "Noto Sans Thai", sans-serif';
+        ctx.fillText("ห้อง: " + roomName, infoX + 12, ty);
+        ty += 52;
+
+        // เลขที่/รหัส pill
+        ctx.fillStyle = "#f1f5f9";
+        roundRect(ctx, infoX, ty - 24, infoW, 38, 10, true, false);
+        ctx.fillStyle = "#475569";
+        ctx.font = 'bold 20px "Noto Sans Thai", sans-serif';
+        ctx.fillText("เลขที่ " + noText + "  รหัส " + codeText, infoX + 12, ty);
+        ty += 60;
+
+        // Name
+        ctx.fillStyle = "#1e293b";
+        ctx.font = '800 30px "Noto Sans Thai", sans-serif';
+        // Truncate long names to fit info width
+        let displayName = nameText;
+        while (ctx.measureText(displayName).width > infoW - 10 && displayName.length > 4) {
+          displayName = displayName.slice(0, -1);
+        }
+        if (displayName !== nameText) displayName += "…";
+        ctx.fillText(displayName, infoX, ty);
+        ty += 44;
+
+        // Nickname
+        ctx.fillStyle = color;
+        ctx.font = 'bold 24px "Noto Sans Thai", sans-serif';
+        ctx.fillText("ชื่อเล่น: " + nickText, infoX, ty);
+
+        // Footer
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = '14px "Noto Sans Thai", sans-serif';
+        ctx.textAlign = "right";
+        ctx.fillText("Learn Tracking System", W - 22, H - 12);
 
         resolve(canvas.toDataURL("image/png"));
       } catch (err) {

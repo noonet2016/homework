@@ -4,7 +4,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createStudent, deleteStudent, updateStudent, createStudentsBulk } from "@/lib/actions/students";
 import { createTask, deleteTask, deleteTasksBulk, saveTasksBatch, copyTasksFromRoom, clearTaskScores } from "@/lib/actions/tasks";
-import { generatePremiumQrDataUrl } from "@/lib/generatePremiumQr";
+import { generatePremiumQrDataUrl, generatePrintQrDataUrl } from "@/lib/generatePremiumQr";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
 
 type RoomSummary = { id: string; name: string; icon: string | null };
@@ -911,8 +911,8 @@ async function handleSaveTasks() {
                     const qr = qrUrls[s.id];
                     if (!qr) continue;
                     const [tDataUrl, sDataUrl] = await Promise.all([
-                      generatePremiumQrDataUrl(qr.teacher, "ครู (ให้คะแนนด่วน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
-                      generatePremiumQrDataUrl(qr.student, "นักเรียน (ดูคะแนน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
+                      generatePrintQrDataUrl(qr.teacher, "ครู (ให้คะแนนด่วน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
+                      generatePrintQrDataUrl(qr.student, "นักเรียน (ดูคะแนน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
                     ]);
                     cards.push(`<img src="${tDataUrl}" class="card">`, `<img src="${sDataUrl}" class="card">`);
                   }
@@ -922,7 +922,7 @@ async function handleSaveTasks() {
                     <title>QR ทั้งห้องเรียน — ${roomName}</title>
                     <style>
                       *{box-sizing:border-box;margin:0;padding:0}
-                      body{background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:3mm;padding:0;}
+                      body{background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:2mm;padding:0;}
                       .card{width:100%;height:auto;display:block;break-inside:avoid;page-break-inside:avoid;}
                       @media print{@page{size:A4 portrait;margin:8mm}body{background:#fff}}
                     </style></head><body>${cards.join("")}</body></html>`);

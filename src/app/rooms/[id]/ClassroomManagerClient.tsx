@@ -4,7 +4,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createStudent, deleteStudent, updateStudent, createStudentsBulk } from "@/lib/actions/students";
 import { createTask, deleteTask, deleteTasksBulk, saveTasksBatch, copyTasksFromRoom, clearTaskScores } from "@/lib/actions/tasks";
-import { generatePremiumQrDataUrl, generatePrintQrDataUrl } from "@/lib/generatePremiumQr";
+import { generatePremiumQrDataUrl } from "@/lib/generatePremiumQr";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
 
 type RoomSummary = { id: string; name: string; icon: string | null };
@@ -911,21 +911,26 @@ async function handleSaveTasks() {
                     const qr = qrUrls[s.id];
                     if (!qr) continue;
                     const [tDataUrl, sDataUrl] = await Promise.all([
-                      generatePrintQrDataUrl(qr.teacher, "ครู (ให้คะแนนด่วน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
-                      generatePrintQrDataUrl(qr.student, "นักเรียน (ดูคะแนน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
+                      generatePremiumQrDataUrl(qr.teacher, "ครู (ให้คะแนนด่วน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
+                      generatePremiumQrDataUrl(qr.student, "นักเรียน (ดูคะแนน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
                     ]);
-                    cards.push(`<img src="${tDataUrl}" class="card">`, `<img src="${sDataUrl}" class="card">`);
+                    cards.push(`<img src="${tDataUrl}">`, `<img src="${sDataUrl}">`);
                   }
                   const win = window.open("", "_blank");
                   if (!win) return;
                   win.document.write(`<!doctype html><html><head><meta charset="utf-8">
                     <title>QR ทั้งห้องเรียน — ${roomName}</title>
                     <style>
-                      *{box-sizing:border-box;margin:0;padding:0}
-                      body{background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:2mm;padding:0;}
-                      .card{width:100%;height:auto;display:block;break-inside:avoid;page-break-inside:avoid;}
-                      @media print{@page{size:A4 portrait;margin:8mm}body{background:#fff}}
-                    </style></head><body>${cards.join("")}</body></html>`);
+                      body{font-family:"Noto Sans Thai",sans-serif;margin:0;padding:10mm;background:#fff}
+                      .page-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5mm;}
+                      img{width:100%;max-height:52mm;object-fit:contain;border:1px dashed #bbb;border-radius:5mm;}
+                      @media print{
+                        @page{size:A4;margin:10mm}
+                        body{padding:0}
+                        .page-grid{gap:5mm}
+                        img{box-shadow:none;page-break-inside:avoid;}
+                      }
+                    </style></head><body><div class="page-grid">${cards.join("")}</div></body></html>`);
                   win.document.close();
                   setTimeout(() => win.print(), 800);
                 }}

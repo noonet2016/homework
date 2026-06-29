@@ -82,27 +82,29 @@ export default function QuickGradeClient({
 
         {/* Header */}
         <div className="p-4 md:p-5 border-b border-slate-200 shrink-0">
-          <div className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-3 mb-3 md:grid-cols-[minmax(0,1fr)_132px]">
-            <h3
-              title={student.name}
-              className="min-w-0 font-bold leading-tight text-xl md:text-2xl"
-            >
-              <span className="block truncate">{firstName || student.name}</span>
-              {lastName ? <span className="block truncate">{lastName}</span> : null}
-            </h3>
+          <div className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-3 md:grid-cols-[minmax(0,1fr)_132px]">
+            <div className="min-w-0">
+              <h3
+                title={student.name}
+                className="font-bold leading-tight text-xl md:text-2xl"
+              >
+                <span className="block truncate">{firstName || student.name}</span>
+                {lastName ? <span className="block truncate">{lastName}</span> : null}
+              </h3>
+              <p className="text-slate-500 text-sm mt-1 flex flex-wrap gap-x-3">
+                <span className="whitespace-nowrap">เลขที่ {student.number ?? "-"}</span>
+                <span className="whitespace-nowrap">รหัส {student.code || "-"}</span>
+              </p>
+              {student.nickname && (
+                <p className="text-indigo-500 text-sm">ชื่อเล่น: {student.nickname}</p>
+              )}
+            </div>
             <div className="flex flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 px-3 py-3 text-center text-white shadow-lg">
               <p className="text-[9px] font-black uppercase tracking-widest opacity-80">คะแนนรวม</p>
               <p className="text-4xl font-black leading-none">{total}</p>
               <p className="text-[9px] opacity-70 mt-0.5">คะแนน</p>
             </div>
           </div>
-          <p className="text-slate-500 text-sm mb-1 flex flex-wrap gap-x-3">
-            <span className="whitespace-nowrap">เลขที่ {student.number ?? "-"}</span>
-            <span className="whitespace-nowrap">รหัส {student.code || "-"}</span>
-          </p>
-          {student.nickname && (
-            <p className="text-indigo-500 text-sm">ชื่อเล่น: {student.nickname}</p>
-          )}
         </div>
 
         {/* Body — scrollable */}

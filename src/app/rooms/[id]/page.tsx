@@ -121,7 +121,7 @@ export default async function RoomPage({
 
           <div className="flex items-center gap-2">
             {isTeacher ? (
-              <ClassroomManagerClient roomId={room.id} students={students} tasks={tasks} rooms={allRooms} />
+              <ClassroomManagerClient roomId={room.id} roomName={room.name} students={students} tasks={tasks} rooms={allRooms} />
             ) : null}
           </div>
         </div>

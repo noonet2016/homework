@@ -4,12 +4,14 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createStudent, deleteStudent, updateStudent, createStudentsBulk } from "@/lib/actions/students";
 import { createTask, deleteTask, deleteTasksBulk, saveTasksBatch, copyTasksFromRoom, clearTaskScores } from "@/lib/actions/tasks";
+import { generatePremiumQrDataUrl } from "@/lib/generatePremiumQr";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
 
 type RoomSummary = { id: string; name: string; icon: string | null };
 
 type ClassroomManagerClientProps = {
   roomId: string;
+  roomName: string;
   students: StudentCardData[];
   tasks: TaskData[];
   rooms: RoomSummary[];
@@ -17,13 +19,13 @@ type ClassroomManagerClientProps = {
 
 type OpenModal = "sheet" | "tasks" | "addStudent" | "editStudent" | "bulkAdd" | "classQr" | null;
 
-export default function ClassroomManagerClient({ roomId, students, tasks, rooms }: ClassroomManagerClientProps) {
+export default function ClassroomManagerClient({ roomId, roomName, students, tasks, rooms }: ClassroomManagerClientProps) {
   const router = useRouter();
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const [editingStudent, setEditingStudent] = useState<StudentCardData | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [qrUrls, setQrUrls] = useState<Record<string, string>>({});
+  const [qrUrls, setQrUrls] = useState<Record<string, { teacher: string; student: string }>>({});
   const [localTasks, setLocalTasks] = useState<TaskData[]>(tasks);
   const [sourceRoomId, setSourceRoomId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -270,20 +272,24 @@ async function handleSaveTasks() {
     return () => window.removeEventListener("selection-changed", handler);
   }, []);
 
-  // Generate QR codes when classQr modal opens
+  // Generate teacher+student QR URLs when classQr modal opens
   useEffect(() => {
     if (openModal !== "classQr") return;
+    const origin = window.location.origin;
     import("qrcode").then((QRCode) => {
+      const opts = { width: 220, margin: 1, color: { dark: "#1e2d52", light: "#ffffff" } };
       const promises = students.map(async (s) => {
-        const text = [s.name, s.code ? `รหัส: ${s.code}` : "", s.number ? `เลขที่: ${s.number}` : ""]
-          .filter(Boolean)
-          .join(" | ");
-        const url = await QRCode.default.toDataURL(text, { width: 180, margin: 1, color: { dark: "#1e2d52", light: "#ffffff" } });
-        return [s.id, url] as [string, string];
+        const teacherUrl = `${origin}/grade/${roomId}/${s.id}`;
+        const studentUrl = `${origin}/view/${roomId}/${s.id}`;
+        const [teacher, student] = await Promise.all([
+          QRCode.default.toDataURL(teacherUrl, opts),
+          QRCode.default.toDataURL(studentUrl, opts),
+        ]);
+        return [s.id, { teacher, student }] as [string, { teacher: string; student: string }];
       });
       Promise.all(promises).then((entries) => setQrUrls(Object.fromEntries(entries)));
     });
-  }, [openModal, students]);
+  }, [openModal, roomId, students]);
 
   function close() {
     setOpenModal(null);
@@ -561,7 +567,7 @@ async function handleSaveTasks() {
                   </button>
                 ) : (
                   <>
-                    <button type="button" onClick={close} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300">
+                    <button type="button" onClick={close} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                       <i className="fa-solid fa-xmark" /> ยกเลิก
                     </button>
                     <button type="button" onClick={handleSaveTasks} disabled={isSaving}
@@ -587,7 +593,7 @@ async function handleSaveTasks() {
             </h3>
             <StudentFields />
             <div className="flex justify-end gap-2 mt-5">
-              <button type="button" onClick={close} className="px-4 py-2 rounded bg-slate-200 font-semibold">
+              <button type="button" onClick={close} className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                 <i className="fa-solid fa-xmark mr-1" />ยกเลิก
               </button>
               <button type="submit" className="px-4 py-2 rounded bg-emerald-600 text-white font-semibold">
@@ -614,7 +620,7 @@ async function handleSaveTasks() {
                 <button type="submit" form={`delete-student-${editingStudent.id}`} className="px-4 py-2 rounded bg-red-600 text-white font-semibold mr-auto">
                   <i className="fa-solid fa-trash-can mr-1" />ลบนักเรียน
                 </button>
-                <button type="button" onClick={() => setEditingStudent(null)} className="px-4 py-2 rounded bg-slate-200 font-semibold">
+                <button type="button" onClick={() => setEditingStudent(null)} className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                   <i className="fa-solid fa-xmark mr-1" />ยกเลิก
                 </button>
                 <button type="submit" className="px-4 py-2 rounded bg-amber-500 text-white font-semibold">
@@ -738,7 +744,7 @@ async function handleSaveTasks() {
             <p className="text-slate-700 mb-2">ต้องการลบ &ldquo;{deleteConfirmTask.name}&rdquo; ใช่หรือไม่?</p>
             <p className="text-red-500 text-sm font-semibold mb-6">หมายเหตุ: คะแนนของงานนี้จะถูกลบออกจากนักเรียนทุกคนในห้อง</p>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setDeleteConfirmTask(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300">
+              <button type="button" onClick={() => setDeleteConfirmTask(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                 <i className="fa-solid fa-xmark" /> ยกเลิก
               </button>
               <button type="button" onClick={confirmDeleteTask} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700">
@@ -762,7 +768,7 @@ async function handleSaveTasks() {
             <p className="text-slate-700 mb-2">ต้องการล้างคะแนนทั้งหมดของ &ldquo;{clearConfirmTask.name}&rdquo; ใช่หรือไม่?</p>
             <p className="text-red-500 text-sm font-semibold mb-6">หมายเหตุ: คะแนนทุกคนในงานนี้จะถูกรีเซ็ตเป็น 0 ไม่สามารถย้อนกลับได้</p>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setClearConfirmTask(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300">
+              <button type="button" onClick={() => setClearConfirmTask(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                 <i className="fa-solid fa-xmark" /> ยกเลิก
               </button>
               <button type="button" onClick={confirmClearScores} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600">
@@ -781,32 +787,154 @@ async function handleSaveTasks() {
       {/* ===== Class QR Modal ===== */}
       {openModal === "classQr" && (
         <div className="fixed inset-0 z-[59] bg-black/60 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop">
-            <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
-            <h3 className="text-2xl font-black text-[#1e2d52] mb-1 flex items-center gap-2">
-              <i className="fa-solid fa-qrcode text-violet-500" /> QR Code ทั้งห้องเรียน
-            </h3>
-            <p className="text-slate-500 text-sm mb-4">จำนวนนักเรียน {students.length} คน</p>
-            <div className="overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pr-1">
-              {students.map((s) => (
-                <div key={s.id} className="flex flex-col items-center gap-1 border rounded-xl p-3 bg-slate-50">
-                  {qrUrls[s.id] ? (
-                    <img src={qrUrls[s.id]} alt={s.name} className="w-24 h-24 rounded" />
-                  ) : (
-                    <div className="w-24 h-24 rounded bg-slate-200 flex items-center justify-center text-slate-400">
-                      <i className="fa-solid fa-spinner fa-spin" />
-                    </div>
-                  )}
-                  <p className="text-xs font-bold text-center text-slate-700 leading-tight">{s.name}</p>
-                  {s.number && <p className="text-[10px] text-slate-400">เลขที่ {s.number}</p>}
-                </div>
-              ))}
-              {students.length === 0 && (
-                <p className="col-span-full text-center text-slate-500 py-8">ยังไม่มีนักเรียน</p>
-              )}
+          <div className="relative bg-white rounded-2xl w-full max-w-3xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop overflow-hidden">
+            {/* Header */}
+            <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-[#1e2d52] flex items-center gap-2">
+                  <i className="fa-solid fa-qrcode text-violet-500" /> QR Code ทั้งห้องเรียน
+                </h3>
+                <p className="text-slate-500 text-sm mt-0.5">จำนวนนักเรียน {students.length} คน</p>
+              </div>
+              <button type="button" onClick={close} className="modal-close-btn" aria-label="Close">✕</button>
             </div>
-            <div className="mt-4 flex justify-end border-t pt-3">
-              <button type="button" onClick={close} className="px-4 py-2 rounded bg-slate-200 font-semibold">
+            {/* List */}
+            <div className="overflow-y-auto flex-1 p-4 space-y-4">
+              {students.length === 0 && (
+                <p className="text-center text-slate-500 py-8">ยังไม่มีนักเรียน</p>
+              )}
+              {[...students].sort((a, b) => (a.number ?? 999) - (b.number ?? 999)).map((s) => {
+                const qr = qrUrls[s.id];
+                const origin = typeof window !== "undefined" ? window.location.origin : "";
+                const teacherUrl = `${origin}/grade/${roomId}/${s.id}`;
+                const studentUrl = `${origin}/view/${roomId}/${s.id}`;
+                return (
+                  <div key={s.id} className="bg-white border border-slate-200 rounded-[24px] overflow-hidden shadow-sm">
+                    {/* Student bar */}
+                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 flex flex-wrap items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-base font-black text-slate-700 shrink-0">
+                        {s.number ?? "-"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-black text-slate-800 leading-tight text-sm">
+                          {s.name}{s.nickname ? <span className="text-indigo-500"> ({s.nickname})</span> : null}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                          เลขที่ {s.number ?? "-"} • รหัส {s.code || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    {/* QR panels */}
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Teacher */}
+                      <div className="bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-100/50 rounded-3xl p-4 flex flex-col items-center">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                          <span className="text-[11px] font-black text-indigo-700 uppercase tracking-widest">สำหรับครู (ให้คะแนนด่วน)</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-2xl mb-3 border border-indigo-100 shadow-sm">
+                          {qr ? (
+                            <img src={qr.teacher} alt="teacher QR" className="w-[140px] h-[140px] rounded-lg" />
+                          ) : (
+                            <div className="w-[140px] h-[140px] rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+                              <i className="fa-solid fa-spinner fa-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col w-full gap-2">
+                          {qr && (
+                            <a
+                              href={qr.teacher}
+                              download={`teacher_QR_เลขที่${s.number ?? s.id}_${s.name}.png`}
+                              className="w-full py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                            >
+                              <i className="fa-solid fa-cloud-arrow-down" /> ดาวน์โหลด
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(teacherUrl)}
+                            className="w-full py-2 rounded-xl bg-white border border-indigo-200 text-indigo-600 text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            <i className="fa-solid fa-link" /> คัดลอกลิงก์
+                          </button>
+                        </div>
+                      </div>
+                      {/* Student */}
+                      <div className="bg-gradient-to-br from-emerald-50 to-white border-2 border-emerald-100/50 rounded-3xl p-4 flex flex-col items-center">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-[11px] font-black text-emerald-700 uppercase tracking-widest">สำหรับนักเรียน (ดูคะแนน)</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-2xl mb-3 border border-emerald-100 shadow-sm">
+                          {qr ? (
+                            <img src={qr.student} alt="student QR" className="w-[140px] h-[140px] rounded-lg" />
+                          ) : (
+                            <div className="w-[140px] h-[140px] rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+                              <i className="fa-solid fa-spinner fa-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col w-full gap-2">
+                          {qr && (
+                            <a
+                              href={qr.student}
+                              download={`student_QR_เลขที่${s.number ?? s.id}_${s.name}.png`}
+                              className="w-full py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                            >
+                              <i className="fa-solid fa-cloud-arrow-down" /> ดาวน์โหลด
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(studentUrl)}
+                            className="w-full py-2 rounded-xl bg-white border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            <i className="fa-solid fa-link" /> คัดลอกลิงก์
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Footer */}
+            <div className="shrink-0 border-t border-slate-100 px-6 py-3 flex justify-between items-center bg-white gap-3">
+              <button
+                type="button"
+                disabled={Object.keys(qrUrls).length < students.length}
+                onClick={async () => {
+                  const sorted = [...students].sort((a, b) => (a.number ?? 999) - (b.number ?? 999));
+                  const cards: string[] = [];
+                  for (const s of sorted) {
+                    const qr = qrUrls[s.id];
+                    if (!qr) continue;
+                    const [tDataUrl, sDataUrl] = await Promise.all([
+                      generatePremiumQrDataUrl(qr.teacher, "ครู (ให้คะแนนด่วน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
+                      generatePremiumQrDataUrl(qr.student, "นักเรียน (ดูคะแนน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
+                    ]);
+                    cards.push(`<img src="${tDataUrl}" class="card">`, `<img src="${sDataUrl}" class="card">`);
+                  }
+                  const win = window.open("", "_blank");
+                  if (!win) return;
+                  win.document.write(`<!doctype html><html><head><meta charset="utf-8">
+                    <title>QR ทั้งห้องเรียน — ${roomName}</title>
+                    <style>
+                      *{box-sizing:border-box;margin:0;padding:0}
+                      body{background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:3mm;padding:0;}
+                      .card{width:100%;height:auto;display:block;break-inside:avoid;page-break-inside:avoid;}
+                      @media print{@page{size:A4 portrait;margin:8mm}body{background:#fff}}
+                    </style></head><body>${cards.join("")}</body></html>`);
+                  win.document.close();
+                  setTimeout(() => win.print(), 800);
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <i className="fa-solid fa-print" />
+                {Object.keys(qrUrls).length < students.length ? "กำลังสร้าง QR..." : "พิมพ์ทั้งหมด"}
+              </button>
+              <button type="button" onClick={close} className="px-4 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 font-semibold text-sm hover:bg-rose-100 shadow-sm">
                 <i className="fa-solid fa-xmark mr-1" />ปิด
               </button>
             </div>
@@ -987,7 +1115,7 @@ function BulkAddModal({ roomId, onClose }: { roomId: string; onClose: () => void
         {result && <p className="text-emerald-600 text-sm font-semibold mb-3">{result}</p>}
 
         <div className="flex justify-end gap-2 mt-auto border-t pt-3">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-slate-200 font-semibold">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
             <i className="fa-solid fa-xmark mr-1" />ปิด
           </button>
           <button

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { login, logout, type LoginState } from "@/lib/actions/auth";
@@ -12,6 +12,9 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
+  const chipRef = useRef<HTMLDivElement>(null);
+  const lastPointerType = useRef<string>("mouse");
 
   useEffect(() => {
     const savedPass = localStorage.getItem("LT_ADMIN_PASS_REMEMBER");
@@ -36,6 +39,18 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
       }
     }
   }, []);
+
+  // Collapse mobile-expanded chip when tapping outside
+  useEffect(() => {
+    if (!mobileExpanded) return;
+    const handler = (e: PointerEvent) => {
+      if (chipRef.current && !chipRef.current.contains(e.target as Node)) {
+        setMobileExpanded(false);
+      }
+    };
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
+  }, [mobileExpanded]);
 
   // Allow topbar fa-user-shield button to open the auth modal via custom event
   useEffect(() => {
@@ -74,13 +89,17 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
 
   return (
     <>
-      <div className="global-auth-chip fixed right-3 bottom-4 md:bottom-auto md:top-3 z-[1000001]">
+      <div ref={chipRef} className={`global-auth-chip fixed right-3 top-3 z-[1000001]${mobileExpanded ? " is-open" : ""}`}>
         <button
-          onClick={() =>
-            isTeacher
-              ? setShowLogoutConfirm(true)
-              : setOpen(true)
-          }
+          onPointerDown={(e) => { lastPointerType.current = e.pointerType; }}
+          onClick={() => {
+            if (lastPointerType.current === "touch" && !mobileExpanded) {
+              setMobileExpanded(true);
+              return;
+            }
+            setMobileExpanded(false);
+            isTeacher ? setShowLogoutConfirm(true) : setOpen(true);
+          }}
           className="global-auth-btn flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 backdrop-blur px-2.5 py-2 shadow-md hover:shadow-lg transition-all"
         >
           <span
@@ -195,7 +214,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="px-4 py-2 rounded bg-slate-200 font-semibold flex items-center justify-center cursor-pointer hover:bg-slate-300 transition-colors text-slate-700"
+                  className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold flex items-center justify-center cursor-pointer hover:bg-rose-100 shadow-sm rounded transition-colors"
                 >
                   <i className="fa-solid fa-xmark mr-1"></i>ยกเลิก
                 </button>
@@ -235,7 +254,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
               <button
                 type="button"
                 onClick={() => setShowLogoutConfirm(false)}
-                className="px-4 py-2 rounded bg-slate-200 font-semibold flex items-center justify-center cursor-pointer hover:bg-slate-300 transition-colors text-slate-700"
+                className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold flex items-center justify-center cursor-pointer hover:bg-rose-100 shadow-sm rounded transition-colors"
               >
                 <i className="fa-solid fa-xmark mr-1"></i>ยกเลิก
               </button>

@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveStudentScores } from "@/lib/actions/scores";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
+import QuickGradeQrModal from "./QuickGradeQrModal";
 
 type StudentScoreModalProps = {
   roomId: string;
@@ -23,6 +24,7 @@ export default function StudentScoreModal({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
   const initialValues = useMemo(
     () =>
       Object.fromEntries(
@@ -82,14 +84,23 @@ export default function StudentScoreModal({
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
           <div className="shrink-0 border-b border-slate-200 p-4 md:p-5">
-            <div className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-3 mb-3 md:grid-cols-[minmax(0,1fr)_132px]">
-              <h3
-                title={student.name}
-                className="min-w-0 font-bold leading-tight text-xl md:text-2xl"
-              >
-                <span className="block truncate">{firstName || student.name}</span>
-                {lastName ? <span className="block truncate">{lastName}</span> : null}
-              </h3>
+            <div className="grid grid-cols-[minmax(0,1fr)_112px] items-start gap-3 md:grid-cols-[minmax(0,1fr)_132px]">
+              <div className="min-w-0">
+                <h3
+                  title={student.name}
+                  className="font-bold leading-tight text-xl md:text-2xl"
+                >
+                  <span className="block truncate">{firstName || student.name}</span>
+                  {lastName ? <span className="block truncate">{lastName}</span> : null}
+                </h3>
+                <p className="text-slate-500 text-sm mt-1 flex flex-wrap gap-x-3">
+                  <span className="whitespace-nowrap">เลขที่ {student.number ?? "-"}</span>
+                  <span className="whitespace-nowrap">รหัส {student.code || "-"}</span>
+                </p>
+                {student.nickname ? (
+                  <p className="text-indigo-500 text-sm">{`ชื่อเล่น: ${student.nickname}`}</p>
+                ) : null}
+              </div>
               <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-3 py-2 text-center shadow-sm">
                 <p className="text-[10px] font-bold leading-tight text-slate-500">คะแนนรวม</p>
                 <p className="text-[10px] font-bold leading-tight text-slate-400">ปัจจุบัน</p>
@@ -101,13 +112,6 @@ export default function StudentScoreModal({
                 </p>
               </div>
             </div>
-            <p className="text-slate-500 text-sm mb-1 flex flex-wrap gap-x-3">
-              <span className="whitespace-nowrap">เลขที่ {student.number ?? "-"}</span>
-              <span className="whitespace-nowrap">รหัส {student.code || "-"}</span>
-            </p>
-            <p className="text-indigo-500 text-sm mb-1">
-              {student.nickname ? `ชื่อเล่น: ${student.nickname}` : ""}
-            </p>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-4 md:p-5">
@@ -215,7 +219,7 @@ export default function StudentScoreModal({
 
           {isTeacher && (
             <div className="shrink-0 border-t border-slate-200 bg-white p-4 md:p-5">
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-[1fr_auto] gap-2">
                 <button
                   type="button"
                   onClick={saveScores}
@@ -225,12 +229,32 @@ export default function StudentScoreModal({
                   <i className="fa-solid fa-floppy-disk mr-2" />
                   {isPending ? "บันทึก..." : "บันทึก"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQr(true)}
+                  className="h-full px-4 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-semibold text-sm"
+                  title="QR Code รายบุคคล"
+                >
+                  <i className="fa-solid fa-qrcode text-lg" />
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
     </div>
+
+      {showQr && (
+        <QuickGradeQrModal
+          roomId={roomId}
+          studentId={student.id}
+          studentName={student.name}
+          studentNumber={student.number ?? null}
+          studentCode={student.code ?? null}
+          roomName=""
+          onClose={() => setShowQr(false)}
+        />
+      )}
 
       {lightboxUrl && (
         <div

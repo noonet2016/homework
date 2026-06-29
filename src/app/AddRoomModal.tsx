@@ -110,7 +110,7 @@ export default function AddRoomModal() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="px-4 py-2 rounded bg-slate-200 font-semibold hover:bg-slate-300 transition-colors text-slate-700 flex items-center gap-1"
+              className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm rounded transition-colors flex items-center gap-1"
             >
               <i className="fa-solid fa-xmark" /> ยกเลิก
             </button>

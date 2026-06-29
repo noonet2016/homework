@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createStudent, deleteStudent, updateStudent, createStudentsBulk } from "@/lib/actions/students";
 import { createTask, deleteTask, deleteTasksBulk, saveTasksBatch, copyTasksFromRoom, clearTaskScores } from "@/lib/actions/tasks";
 import { generatePremiumQrDataUrl } from "@/lib/generatePremiumQr";
+import { dualQrCardSvg, dualQrPrintDocument } from "@/lib/dualQrCard";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
 
 type RoomSummary = { id: string; name: string; icon: string | null };
@@ -907,32 +908,36 @@ async function handleSaveTasks() {
                 onClick={async () => {
                   const sorted = [...students].sort((a, b) => (a.number ?? 999) - (b.number ?? 999));
                   const cards: string[] = [];
-                  for (const s of sorted) {
+                  sorted.forEach((s, i) => {
                     const qr = qrUrls[s.id];
-                    if (!qr) continue;
-                    const [tDataUrl, sDataUrl] = await Promise.all([
-                      generatePremiumQrDataUrl(qr.teacher, "ครู (ให้คะแนนด่วน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
-                      generatePremiumQrDataUrl(qr.student, "นักเรียน (ดูคะแนน)", roomName, String(s.number ?? "-"), s.code ?? "-", s.name, s.nickname ?? "-"),
-                    ]);
-                    cards.push(`<img src="${tDataUrl}">`, `<img src="${sDataUrl}">`);
-                  }
-                  const win = window.open("", "_blank");
-                  if (!win) return;
-                  win.document.write(`<!doctype html><html><head><meta charset="utf-8">
-                    <title>QR ทั้งห้องเรียน — ${roomName}</title>
-                    <style>
-                      body{font-family:"Noto Sans Thai",sans-serif;margin:0;padding:10mm;background:#fff}
-                      .page-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5mm;}
-                      img{width:100%;max-height:52mm;object-fit:contain;border:1px dashed #bbb;border-radius:5mm;}
-                      @media print{
-                        @page{size:A4;margin:10mm}
-                        body{padding:0}
-                        .page-grid{gap:5mm}
-                        img{box-shadow:none;page-break-inside:avoid;}
-                      }
-                    </style></head><body><div class="page-grid">${cards.join("")}</div></body></html>`);
-                  win.document.close();
-                  setTimeout(() => win.print(), 800);
+                    if (!qr) return;
+                    cards.push(dualQrCardSvg({
+                      teacherQr: qr.teacher,
+                      studentQr: qr.student,
+                      roomName,
+                      no: String(s.number ?? "-"),
+                      code: s.code ?? "-",
+                      name: s.name,
+                      nick: s.nickname ?? "-",
+                      index: i,
+                    }));
+                  });
+                  // Render into a hidden iframe so the print dialog opens directly
+                  // (no extra visible preview tab).
+                  const iframe = document.createElement("iframe");
+                  iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+                  document.body.appendChild(iframe);
+                  const doc = iframe.contentWindow!.document;
+                  doc.open();
+                  doc.write(dualQrPrintDocument(cards, roomName));
+                  doc.close();
+                  const cleanup = () => { setTimeout(() => iframe.remove(), 500); };
+                  iframe.contentWindow!.onafterprint = cleanup;
+                  // wait for webfont + QR images to render, then print
+                  setTimeout(() => {
+                    iframe.contentWindow!.focus();
+                    iframe.contentWindow!.print();
+                  }, 800);
                 }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed"
               >

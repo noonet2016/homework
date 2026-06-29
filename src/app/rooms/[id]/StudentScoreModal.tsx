@@ -129,6 +129,15 @@ export default function StudentScoreModal({
                       >
                         {task.name}
                       </label>
+                      {task.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setLightboxUrl(task.imageUrl)}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full border border-indigo-300 text-indigo-600 text-xs font-semibold hover:bg-indigo-50"
+                        >
+                          <i className="fa-solid fa-image mr-1 text-[10px]" />ใบงาน
+                        </button>
+                      )}
                     </div>
                     <input
                       type="number"

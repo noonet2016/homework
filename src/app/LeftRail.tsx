@@ -10,6 +10,7 @@ interface LeftRailProps {
 
 export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
   const [guideOpen, setGuideOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleAddRoom = () =>
     window.dispatchEvent(new CustomEvent("open-add-room-modal", { detail: { usedIcons } }));
@@ -29,6 +30,147 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
 
   return (
     <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes slideRight {
+              from { transform: translateX(-100%); }
+              to { transform: translateX(0); }
+            }
+            .animate-slide-right {
+              animation: slideRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+          `,
+        }}
+      />
+
+      {/* Hamburger Toggle Button (Mobile Only) */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-4 left-4 z-40 lg:hidden flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white shadow-md text-slate-600 hover:bg-slate-50 focus:outline-none"
+        title="เปิดเมนู"
+      >
+        <i className="fa-solid fa-bars text-lg" />
+      </button>
+
+      {/* Mobile Drawer Menu */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[100000] lg:hidden animate-fade-in">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          
+          {/* Drawer Content */}
+          <div className="absolute inset-y-0 left-0 w-64 bg-slate-900 text-slate-100 p-5 flex flex-col gap-6 shadow-2xl animate-slide-right">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center text-lg shadow">
+                  <i className="fa-solid fa-rocket" />
+                </div>
+                <span className="font-black text-base tracking-tight text-white">Learn Tracking</span>
+              </div>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Nav Items */}
+            <nav className="flex flex-col gap-1.5 flex-1 overflow-y-auto">
+              <span
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-bold cursor-pointer"
+              >
+                <i className="fa-solid fa-house w-5 text-center text-indigo-400" />
+                หน้าหลัก
+              </span>
+
+              {isTeacher && (
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    handleAddRoom();
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+                >
+                  <i className="fa-solid fa-circle-plus w-5 text-center text-emerald-400" />
+                  เพิ่มห้องเรียน
+                </button>
+              )}
+
+              {isTeacher && (
+                <Link
+                  href="/reports"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer"
+                >
+                  <i className="fa-solid fa-chart-simple w-5 text-center text-amber-400" />
+                  รายงานความก้าวหน้า
+                </Link>
+              )}
+
+              {isTeacher && (
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openDeviceManager();
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+                >
+                  <i className="fa-solid fa-shield-halved w-5 text-center text-blue-400" />
+                  อุปกรณ์ที่เชื่อถือ
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  setGuideOpen(true);
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+              >
+                <i className="fa-solid fa-book-open w-5 text-center text-sky-400" />
+                คู่มือการใช้งาน
+              </button>
+
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  openDev();
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+              >
+                <i className="fa-solid fa-code w-5 text-center text-pink-400" />
+                ผู้พัฒนา
+              </button>
+            </nav>
+
+            {/* Footer (Teacher Auth Toggle) */}
+            <div className="border-t border-slate-800 pt-4">
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  handleTeacherAuthClick();
+                }}
+                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold transition ${
+                  isTeacher
+                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/10"
+                }`}
+              >
+                <i className={`fa-solid ${isTeacher ? "fa-right-from-bracket" : "fa-user-shield"}`} />
+                {isTeacher ? "ออกจากโหมดครู" : "เข้าสู่โหมดครู"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <aside className="left-rail p-4 hidden lg:flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white grid place-items-center text-2xl shadow">
           <i className="fa-solid fa-rocket" />

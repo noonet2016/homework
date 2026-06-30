@@ -52,12 +52,16 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-console.log("Running: npx prisma db push...");
+console.log("Running: npx prisma db push (with inline env)...");
 
-const child = spawn("npx", ["prisma", "db", "push"], {
+const dbUrl = process.env.DATABASE_URL;
+// Escape double quotes in database URL just in case
+const escapedDbUrl = dbUrl.replace(/"/g, '\\"');
+const cmd = `DATABASE_URL="${escapedDbUrl}" npx prisma db push`;
+
+const child = spawn(cmd, [], {
   stdio: "inherit",
   shell: true,
-  env: process.env,
 });
 
 child.on("close", (code) => {

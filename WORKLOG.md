@@ -308,4 +308,29 @@ OPEN ITEMS: confirm Plesk SSH/Git access; SESSION_SECRET must be set in prod (el
   - **การซิงค์ข้อมูลสมบูรณ์ (Database Parity)**: เพื่อให้ฐานข้อมูลฝั่ง Local และ Production ตรงกัน 100% ได้สั่งใช้ชุดคำสั่ง XAMPP ทำการดัมป์ฐานข้อมูลในเครื่องออกมาเป็นไฟล์ [scratch/db_dump.sql](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scratch/db_dump.sql) (236KB) และให้เทรนเนอร์นำเข้าไปติดตั้งผ่าน phpMyAdmin บน Plesk สำเร็จลุล่วง
   - บันทึกความพยายามทดสอบ: โครงสร้างฐานข้อมูลสร้างขึ้นเรียบร้อย ตารางครบถ้วน ข้อมูลนักเรียนและบัญชีคุณครู `krutaktan` ติดตั้งเสร็จสิ้น สมบูรณ์แบบ!
 
-- **Commit**: `dc4f043` (เพิ่มตัวซิงค์โคลอน), `0dbd464` (อัปเกรด dependencies tsx), `ea78774` (ย้ายสิทธิ์ config), `0b56b85` (ลบ config เก่า), `e78bde9` (สร้าง config คืนชีพ Prisma 7), `cce44e6` (สคริปต์คู่ขนาน), `b1f67fa` (Inline db URL) และ `5d222d9` (Placeholder fallback).
+- **การแก้ไขตัวนำเข้าสเปรดชีตเพิ่มเติม (Import Sheet Images)**:
+  - แก้ไขสคริปต์ [scripts/import-sheet.ts](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scripts/import-sheet.ts) ให้ดึงข้อมูลลิงก์รูปใบงานจากแท็บพิเศษ `_TaskAssetsDump` (ที่ดัมป์จาก GAS Script Properties) มารันจับคู่เข้ากับรหัสงานของนักเรียนในฐานข้อมูลโดยอัตโนมัติ ทำให้หมดปัญหารูปภาพใบงานกลายเป็นค่าว่าง (null) ระหว่างนำเข้าข้อมูล
+  - สั่งดัมป์ฐานข้อมูลฉบับสมบูรณ์ที่มีลิงก์ภาพครบถ้วนเป็น [scratch/db_dump.sql](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scratch/db_dump.sql) (241KB) เพื่อนำไปทับใน Plesk phpMyAdmin
+- **การปรับแต่งสะพานเชื่อมต่อหน้าเว็บ (Next.js Client-Side Redirection)**:
+  - พบปัญหาการใช้งานฟังก์ชัน `redirect()` ของ Next.js หลังบ้าน ส่งข้อยกเว้นภายในออกมาก่อการประท้วงจนเว็บล่มบน Phusion Passenger ของ Plesk
+  - ทำการปรับปรุงโค้ดที่ [src/app/redirect/page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/redirect/page.tsx) ให้ทำการคืนหน้าเว็บปกติสถานะ 200 แล้วใช้ JavaScript ฝั่งไคลเอนต์ (`window.location.replace`) เป็นผู้เปลี่ยนเส้นทางไปยังหน้า `/view/...` หรือ `/grade/...` แทน ป้องกันการตรวจจับที่ผิดพลาดของ Plesk ได้ 100%
+- **ระบบแก้รูปภาพใบงานล่มบนหน้าให้คะแนนด่วน (Quick Grade Image Fallback)**:
+  - ตรวจพบปัญหารูปภาพใน Popup Lightbox แสดงสัญลักษณ์รูปเสียเมื่อกดดูบนหน้าให้คะแนนด่วนสำหรับคุณครู
+  - ทำการอัปเกรดความสามารถที่คอมโพเนนต์ [src/app/grade/[roomId]/[studentId]/QuickGradeClient.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/grade/%5BroomId%5D/%5BstudentId%5D/QuickGradeClient.tsx) โดยบรรจุกลไกการสลับลิงก์รูปสำรอง (driveImageCandidates กับ onError fallback) ทำให้ลิงก์ Google Drive ในหน้านี้แสดงผลได้ลื่นไหลสมบูรณ์แบบ
+- **การปรับปรุงความสวยงามฝั่ง Google Apps Script**:
+  - เปลี่ยนจากตัวควบคุมเวลาหมุนถอยหลัง 3-2-1 เป็นหน้าการ์ดพรีเมียมสีเข้ม (Premium Transition Card) ที่สามารถกดคลิกต่อได้ทันทีโดยไม่มีดีเลย์ ช่วยให้ผู้ใช้งานสามารถแตะเปลี่ยนหน้ากระโดดข้ามขอบข่าย Iframe ของ Google ได้สะดวกยิ่งขึ้น
+
+- **Commit**: `dc4f043` (เพิ่มตัวซิงค์โคลอน), `0dbd464` (อัปเกรด dependencies tsx), `ea78774` (ย้ายสิทธิ์ config), `0b56b85` (ลบ config เก่า), `e78bde9` (สร้าง config คืนชีพ Prisma 7), `cce44e6` (สคริปต์คู่ขนาน), `b1f67fa` (Inline db URL), `5d222d9` (Placeholder fallback), `f1e5bb9` (นำเข้าไฟล์รูปใบงาน), `5e84800` (คืนค่า redirect คิวรี่จริง), `31c1f8b` (สลับหน้าฝั่ง Client) และ `6efe324` (เพิ่ม Image Fallback ในหน้าตรวจงานด่วน).
+
+## ========== CHECKPOINT (2026-06-30, จบภารกิจโดยสมบูรณ์ — Hand-off to Rudolf) ==========
+แอปพลิเคชัน Next.js `homework-next` ร่วมกับฐานข้อมูล MySQL/MariaDB บนเซิร์ฟเวอร์ Plesk จริงได้รับการติดตั้ง ตรวจเช็ก และเปิดใช้งานสำเร็จลุล่วง 100%
+
+### รายการสรุปสถานะการ Deploy และหน้าจอสำคัญ:
+1. **Lobby / หน้าแรก**: ใช้งานได้เรียบร้อย, ค้นหาห้องเรียน และสืบค้นคะแนนนักเรียนได้รวดเร็ว
+2. **หน้าห้องเรียนฝั่งครู**: จัดการใบงาน, คัดลอก, จัดการนักเรียน, สั่งพิมพ์การ์ด QR Code พรีเมียมแบบรวมการ์ดได้ไม่มีติดขัด
+3. **หน้าแสดงผลของเด็ก (Student View)**: ระบบแบ่งฝั่งเควสส่งแล้ว/ค้างส่งชัดเจน, กดเปิดดูรูปใบงานด้วยป๊อปอัป Lightbox แถบเครื่องมือดาวน์โหลด/สั่งพิมพ์ได้ครบถ้วน
+4. **สะพานเชื่อม QR Code**: หน้าลิงก์เปลี่ยนผ่าน `/redirect` รองรับการสแกนด้วย QR บนสมุดแบบเดิมได้อย่างแม่นยำ ปลอดภัยจากปัญหา Passenger ล่มด้วยระบบ Client-side Redirect
+5. **ระบบ Google Apps Script**: ได้รับการปรับแต่งโค้ด `doGet(e)` เป็นหน้าจอย้ายหน้า (Premium Transition Card) หลุดพ้นจากระบบ Sandbox เด้งเข้าเว็บใหม่ได้ทันทีผ่านการคลิก
+6. **การป้องกันลิงก์รูปกูเกิลไดรฟ์ล่ม**: ปลั๊กอินตัวสลับลิงก์สำรอง (Image Fallback) ได้รับการบรรจุเข้าสู่หน้าหลักของระบบ ทั้งฝั่งห้องเรียนนักเรียน หน้ารายงาน และหน้าให้คะแนนด่วนของครูทั้งหมดแล้ว
+7. **ความสอดคล้องข้อมูล**: ข้อมูลเกรดใหม่ของภรรยาเทรนเนอร์ ซิงค์เข้าระบบทั้ง Local (เครื่องส่วนตัว) และ Production (Plesk) ตรงกันเรียบร้อย
+

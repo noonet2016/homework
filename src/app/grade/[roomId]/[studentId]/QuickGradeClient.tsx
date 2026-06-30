@@ -45,6 +45,12 @@ export default function QuickGradeClient({
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  const [quickCheckActive, setQuickCheckActive] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [autoSaved, setAutoSaved] = useState(false);
+  const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
+  const [hasAutoChecked, setHasAutoChecked] = useState("");
+
   useEffect(() => {
     if (isTeacher) return;
     window.dispatchEvent(new CustomEvent("open-teacher-auth"));
@@ -54,6 +60,13 @@ export default function QuickGradeClient({
     setActiveImageIndex(0);
   }, [lightboxUrl]);
 
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const mode = localStorage.getItem(`quick-mode-enabled-${roomId}`) === "true";
+    const taskId = localStorage.getItem(`active-quick-task-${roomId}`);
+    setQuickCheckActive(mode);
+    setActiveTaskId(taskId);
+  }, [roomId]);
 
   const initial = Object.fromEntries(
     tasks.map((t) => {
@@ -67,6 +80,36 @@ export default function QuickGradeClient({
     const v = Number(values[t.id] || "0");
     return sum + (Number.isFinite(v) ? v : 0);
   }, 0);
+
+  // Auto-save check-in when mode is active
+  useEffect(() => {
+    if (!quickCheckActive || !activeTaskId || !isTeacher) return;
+    if (hasAutoChecked === student.id) return; // already processed for this student
+    
+    // We wait until values are populated
+    const currentVal = Number(values[activeTaskId] || "0");
+    if (Number.isNaN(currentVal)) return;
+
+    setHasAutoChecked(student.id);
+
+    if (currentVal === -1 || currentVal > 0) {
+      setAutoSaved(true);
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const byTaskId = Object.fromEntries(
+          tasks.map((t) => [t.id, t.id === activeTaskId ? -1 : (Number(values[t.id] || "0") || 0)]),
+        );
+        await saveStudentScores(roomId, student.id, byTaskId);
+        setValues((v) => ({ ...v, [activeTaskId]: "-1" }));
+        setAutoSaved(true);
+      } catch (err) {
+        setAutoSaveError("ไม่สามารถบันทึกตรวจสมุดด่วนได้");
+      }
+    });
+  }, [quickCheckActive, activeTaskId, isTeacher, roomId, student.id, tasks, hasAutoChecked, values]);
 
   const spaceIdx = student.name.indexOf(" ");
   const firstName = spaceIdx >= 0 ? student.name.slice(0, spaceIdx) : student.name;
@@ -128,6 +171,65 @@ export default function QuickGradeClient({
 
         {/* Body — scrollable */}
         <div className="p-4 md:p-5 overflow-y-auto min-h-0 bg-slate-50/60 flex-1">
+          {/* Quick-check Settings Panel */}
+          {isTeacher && (
+            <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📖</span>
+                  <div>
+                    <p className="font-bold text-slate-800">โหมดสแกนตรวจสมุดด่วน</p>
+                    <p className="text-[11px] text-slate-500">สแกนปุ๊บบันทึกส่งงานทันที ไม่ต้องกดเซฟ</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !quickCheckActive;
+                    setQuickCheckActive(next);
+                    localStorage.setItem(`quick-mode-enabled-${roomId}`, String(next));
+                    if (next && !activeTaskId && tasks.length > 0) {
+                      setActiveTaskId(tasks[0].id);
+                      localStorage.setItem(`active-quick-task-${roomId}`, tasks[0].id);
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    quickCheckActive ? "bg-indigo-600" : "bg-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      quickCheckActive ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {quickCheckActive && (
+                <div className="mt-3 border-t border-indigo-100/60 pt-3 flex flex-col gap-1.5 animate-fade-in">
+                  <label htmlFor="quick-task-select" className="text-xs font-bold text-indigo-700">
+                    เลือกชิ้นงานสำหรับเช็คส่งสมุด:
+                  </label>
+                  <select
+                    id="quick-task-select"
+                    value={activeTaskId || ""}
+                    onChange={(e) => {
+                      setActiveTaskId(e.target.value);
+                      localStorage.setItem(`active-quick-task-${roomId}`, e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none"
+                  >
+                    {tasks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} (เต็ม {t.maxScore ?? 10})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
           {!isTeacher ? (
             <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
               <div className="grid h-14 w-14 place-items-center rounded-full bg-indigo-50 text-indigo-600">
@@ -154,7 +256,7 @@ export default function QuickGradeClient({
             tasks.map((task, index) => {
               const maxVal = task.maxScore ?? 10;
               const currentValue = Number(values[task.id] || "0");
-              const isChecked = currentValue > 0;
+              const isChecked = currentValue > 0 || currentValue === -1;
 
               return (
                 <div
@@ -194,14 +296,34 @@ export default function QuickGradeClient({
                     )}
                   </div>
 
-                  <input
-                    type="number"
-                    id={`score-${index}`}
-                    value={values[task.id] ?? "0"}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onChange={(e) => setValues((v) => ({ ...v, [task.id]: e.target.value }))}
-                    className="w-16 shrink-0 rounded-lg border p-1 text-center text-lg font-black md:w-20 md:text-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                  />
+                  <div className="flex items-center shrink-0">
+                    <input
+                      type="number"
+                      id={`score-${index}`}
+                      value={values[task.id] === "-1" ? "" : (values[task.id] ?? "0")}
+                      placeholder={values[task.id] === "-1" ? "📖 ตรวจแล้ว" : "0"}
+                      onFocus={(e) => e.currentTarget.select()}
+                      onChange={(e) => setValues((v) => ({ ...v, [task.id]: e.target.value }))}
+                      className="w-16 rounded-lg border p-1 text-center text-lg font-black md:w-20 md:text-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder:text-amber-600 placeholder:text-[10px] placeholder:font-black"
+                    />
+                    
+                    {/* Small book icon button to manually set to Checked-only (-1) */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextVal = values[task.id] === "-1" ? "0" : "-1";
+                        setValues((v) => ({ ...v, [task.id]: nextVal }));
+                      }}
+                      className={`ml-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-sm transition ${
+                        values[task.id] === "-1"
+                          ? "bg-amber-100 border-amber-300 text-amber-600 font-bold"
+                          : "border-slate-200 text-slate-400 hover:bg-slate-50"
+                      }`}
+                      title="บันทึกตรวจสมุดแล้ว (ยังไม่ให้คะแนน)"
+                    >
+                      📖
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -252,6 +374,35 @@ export default function QuickGradeClient({
         );
       })()}
 
+      {/* Fullscreen Success Overlay for Quick-check */}
+      {autoSaved && (
+        <div className="fixed inset-0 z-[10000] bg-emerald-600 flex flex-col items-center justify-center p-6 text-white text-center animate-modal-pop">
+          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-white text-emerald-600 text-5xl shadow-2xl animate-bounce">
+            📖
+          </div>
+          <h2 className="text-3xl font-black mb-2">เช็คชื่อส่งสมุดสำเร็จ!</h2>
+          <p className="text-xl font-bold opacity-90 mb-4">{student.name} {student.number ? `เลขที่ ${student.number}` : ""}</p>
+          <div className="bg-white/10 px-5 py-4 rounded-2xl max-w-sm mb-8 border border-white/10">
+            <p className="text-xs opacity-75">ใบงานที่ตรวจรับด่วน</p>
+            <p className="text-lg font-bold mt-1">{tasks.find((t) => t.id === activeTaskId)?.name}</p>
+          </div>
+          <p className="text-sm animate-pulse opacity-85 font-black uppercase tracking-wider">พร้อมนำเล่มต่อไปมาสแกนได้ทันที ➔</p>
+          
+          <button 
+            onClick={() => setAutoSaved(false)}
+            className="mt-12 px-6 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition"
+          >
+            แก้ไขหรือดูคะแนนวิชาอื่นๆ ด้วยมือ
+          </button>
+        </div>
+      )}
+
+      {autoSaveError && (
+        <div className="fixed bottom-4 left-4 right-4 z-[10000] bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between text-sm animate-modal-pop">
+          <span>⚠️ {autoSaveError}</span>
+          <button onClick={() => setAutoSaveError(null)} className="font-bold ml-2">✕</button>
+        </div>
+      )}
     </div>
   );
 }

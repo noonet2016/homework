@@ -30,13 +30,14 @@ export default async function StudentStatusPage({
   const scoreByTask = new Map(student.scores.map((score) => [score.taskId, score.value]));
   const taskRows = tasks.map((task) => {
     const score = scoreByTask.get(task.id) ?? 0;
+    const numScore = Number(score);
     return {
       ...task,
-      score,
-      done: score > 0,
+      score: numScore,
+      done: numScore > 0 || numScore === -1,
     };
   });
-  const totalScore = taskRows.reduce((sum, task) => sum + task.score, 0);
+  const totalScore = taskRows.reduce((sum, task) => sum + (task.score === -1 ? 0 : task.score), 0);
   const tasksCompleted = taskRows.filter((task) => task.done).length;
   const xpPercent = tasks.length > 0 ? Math.min(Math.round((tasksCompleted / tasks.length) * 100), 100) : 0;
   const avatar = (student.nickname || student.name || "👤").trim().charAt(0) || "👤";

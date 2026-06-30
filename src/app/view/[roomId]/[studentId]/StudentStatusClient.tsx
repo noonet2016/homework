@@ -159,8 +159,8 @@ export default function StudentStatusClient({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold leading-tight text-slate-700">{task.name}</p>
-                    <p className={`text-[10px] font-medium ${task.done ? "text-emerald-500" : "text-slate-400"}`}>
-                      {task.done ? "ภารกิจสำเร็จ" : "ยังไม่ส่ง/รอตรวจ"}
+                    <p className={`text-[10px] font-medium ${Number(task.score) === -1 ? "text-amber-500" : task.done ? "text-emerald-500" : "text-slate-400"}`}>
+                      {Number(task.score) === -1 ? "📖 ตรวจสมุดแล้ว (รอคะแนน)" : task.done ? "ภารกิจสำเร็จ" : "ยังไม่ส่ง/รอตรวจ"}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -176,9 +176,11 @@ export default function StudentStatusClient({
                     )}
                     <div className="flex items-baseline gap-0.5">
                       <span className={`text-sm font-black ${task.done ? "text-indigo-600" : "text-slate-300"}`}>
-                        {task.score}
+                        {Number(task.score) === -1 ? "📖" : task.score}
                       </span>
-                      <span className="text-[9px] font-bold uppercase text-slate-400">pt</span>
+                      {Number(task.score) !== -1 && (
+                        <span className="text-[9px] font-bold uppercase text-slate-400">pt</span>
+                      )}
                     </div>
                   </div>
                 </div>

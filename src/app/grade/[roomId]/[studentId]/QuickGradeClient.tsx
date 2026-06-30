@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { saveStudentScores } from "@/lib/actions/scores";
 
-type Task = { id: string; name: string; taskIndex: number; imageUrl: string | null };
+type Task = { id: string; name: string; taskIndex: number; imageUrl: string | null; maxScore?: number };
 type StudentInfo = {
   id: string;
   name: string;
@@ -151,38 +151,60 @@ export default function QuickGradeClient({
               เพิ่มงาน
             </div>
           ) : (
-            tasks.map((task, index) => (
-              <div
-                key={task.id}
-                className="flex items-center justify-between gap-3 rounded-xl border bg-white p-2.5 mb-2"
-              >
-                <div className="min-w-0 flex-1">
-                  <label
-                    htmlFor={`score-${index}`}
-                    className="block text-sm font-medium leading-snug text-slate-800 md:text-base line-clamp-2"
-                  >
-                    {task.name}
-                  </label>
-                  {task.imageUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setLightboxUrl(task.imageUrl!)}
-                      className="mt-1 inline-flex items-center rounded-full border border-indigo-300 px-2 py-0.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+            tasks.map((task, index) => {
+              const maxVal = task.maxScore ?? 10;
+              const currentValue = Number(values[task.id] || "0");
+              const isChecked = currentValue > 0;
+
+              return (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border bg-white p-2.5 mb-2 focus-within:ring-2 focus-within:ring-indigo-100"
+                >
+                  {/* Quick-grade checkbox */}
+                  <div className="flex items-center pl-1 shrink-0">
+                    <input
+                      type="checkbox"
+                      id={`check-${index}`}
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const nextVal = e.target.checked ? String(maxVal) : "0";
+                        setValues((v) => ({ ...v, [task.id]: nextVal }));
+                      }}
+                      className="h-6 w-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <label
+                      htmlFor={`check-${index}`}
+                      className="block text-sm font-semibold leading-snug text-slate-800 md:text-base line-clamp-2 cursor-pointer select-none"
                     >
-                      <i className="fa-solid fa-image mr-1 text-[10px]" />ใบงาน
-                    </button>
-                  )}
+                      {task.name}
+                      <span className="ml-1.5 text-xs text-indigo-500/80 font-normal bg-indigo-50 px-1.5 py-0.5 rounded-md">เต็ม {maxVal}</span>
+                    </label>
+                    {task.imageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setLightboxUrl(task.imageUrl!)}
+                        className="mt-1.5 inline-flex items-center rounded-full border border-indigo-300 px-2 py-0.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+                      >
+                        <i className="fa-solid fa-image mr-1 text-[10px]" />ใบงาน
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    type="number"
+                    id={`score-${index}`}
+                    value={values[task.id] ?? "0"}
+                    onFocus={(e) => e.currentTarget.select()}
+                    onChange={(e) => setValues((v) => ({ ...v, [task.id]: e.target.value }))}
+                    className="w-16 shrink-0 rounded-lg border p-1 text-center text-lg font-black md:w-20 md:text-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
                 </div>
-                <input
-                  type="number"
-                  id={`score-${index}`}
-                  value={values[task.id] ?? "0"}
-                  onFocus={(e) => e.currentTarget.select()}
-                  onChange={(e) => setValues((v) => ({ ...v, [task.id]: e.target.value }))}
-                  className="w-20 shrink-0 rounded-lg border p-1.5 text-center text-xl font-semibold md:w-24 md:text-2xl"
-                />
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

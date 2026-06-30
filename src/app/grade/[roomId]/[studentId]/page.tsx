@@ -29,7 +29,28 @@ export default async function GradePage({
     select: { id: true, name: true, taskIndex: true, imageUrl: true },
   });
 
+  // Fetch max score ever given for each task in this room as fullScore
+  const maxScores = await prisma.score.groupBy({
+    by: ["taskId"],
+    where: {
+      student: { roomId },
+    },
+    _max: {
+      value: true,
+    },
+  });
+
+  const maxScoreByTaskId = Object.fromEntries(
+    maxScores.map((ms) => [ms.taskId, ms._max.value ?? 10])
+  );
+
+  const tasksWithMax = tasks.map((task) => ({
+    ...task,
+    maxScore: maxScoreByTaskId[task.id] ?? 10,
+  }));
+
   return (
+
     <main className="flex h-screen flex-col items-center justify-center overflow-hidden bg-slate-50 p-4">
       <QuickGradeClient
         roomId={roomId}
@@ -43,7 +64,7 @@ export default async function GradePage({
           roomIcon: student.room.icon,
           scores: student.scores,
         }}
-        tasks={tasks}
+        tasks={tasksWithMax}
         isTeacher={isTeacher}
       />
     </main>

@@ -16,6 +16,19 @@ type StudentInfo = {
   scores: { taskId: string; value: number }[];
 };
 
+function driveImageCandidates(url: string): string[] {
+  const m = url.match(/\/d\/([A-Za-z0-9_-]{20,})/) || url.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
+  const id = m?.[1];
+  const list = [url];
+  if (id) {
+    list.push(`https://lh3.googleusercontent.com/d/${id}=w2000`);
+    list.push(`https://drive.google.com/thumbnail?id=${id}&sz=w2000`);
+    list.push(`https://drive.google.com/uc?export=view&id=${id}`);
+  }
+  return Array.from(new Set(list));
+}
+
+
 export default function QuickGradeClient({
   roomId,
   student,
@@ -30,11 +43,17 @@ export default function QuickGradeClient({
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     if (isTeacher) return;
     window.dispatchEvent(new CustomEvent("open-teacher-auth"));
   }, [isTeacher]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [lightboxUrl]);
+
 
   const initial = Object.fromEntries(
     tasks.map((t) => {
@@ -182,26 +201,35 @@ export default function QuickGradeClient({
       </div>
 
       {/* Lightbox */}
-      {lightboxUrl && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/85 flex flex-col items-center justify-center p-4"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <img
-            src={lightboxUrl}
-            alt="ใบงาน"
-            referrerPolicy="no-referrer"
-            className="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            className="absolute top-4 right-4 text-white text-3xl leading-none"
+      {lightboxUrl && (() => {
+        const candidates = driveImageCandidates(lightboxUrl);
+        return (
+          <div
+            className="fixed inset-0 z-[9999] bg-black/85 flex flex-col items-center justify-center p-4"
             onClick={() => setLightboxUrl(null)}
           >
-            ✕
-          </button>
-        </div>
-      )}
+            <img
+              src={candidates[activeImageIndex]}
+              alt="ใบงาน"
+              referrerPolicy="no-referrer"
+              onError={() => {
+                if (activeImageIndex < candidates.length - 1) {
+                  setActiveImageIndex((prev) => prev + 1);
+                }
+              }}
+              className="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              className="absolute top-4 right-4 text-white text-3xl leading-none"
+              onClick={() => setLightboxUrl(null)}
+            >
+              ✕
+            </button>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }

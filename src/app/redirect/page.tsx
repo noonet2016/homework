@@ -38,34 +38,44 @@ export default async function RedirectBridgePage({ searchParams }: RedirectPageP
     },
     select: {
       id: true,
+      name: true,
     },
   });
 
-  if (!room) {
-    return notFound();
+  let student = null;
+  if (room) {
+    student = await prisma.student.findFirst({
+      where: {
+        roomId: room.id,
+        number: numberVal,
+      },
+      select: {
+        id: true,
+        name: true,
+        number: true,
+      },
+    });
   }
 
-  // 2. Find the student in this classroom having this roll number
-  const student = await prisma.student.findFirst({
-    where: {
-      roomId: room.id,
-      number: numberVal,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!student) {
-    return notFound();
-  }
-
-  // 3. Redirect to the correct Next.js route:
-  if (mode === "grade") {
-    // Teacher quick grading mode
-    redirect(`/grade/${room.id}/${student.id}`);
-  } else {
-    // Student gamer profile status view mode
-    redirect(`/view/${room.id}/${student.id}`);
-  }
+  // Debug response to see what's happening
+  return (
+    <div style={{ padding: "2rem", fontFamily: "monospace", background: "#111", color: "#eee" }}>
+      <h1>Redirect Debug Mode</h1>
+      <pre>{JSON.stringify({
+        input: {
+          rawRoomName: resolvedParams.roomName,
+          rawStudentNumber: resolvedParams.studentNumber,
+          rawSheet: resolvedParams.sheet,
+          rawStudentId: resolvedParams.studentId,
+          parsedRoomName: roomName,
+          parsedStudentNumber: studentNumberStr,
+          numberVal
+        },
+        dbResult: {
+          roomFound: room,
+          studentFound: student
+        }
+      }, null, 2)}</pre>
+    </div>
+  );
 }

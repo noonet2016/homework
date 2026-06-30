@@ -113,6 +113,48 @@ async function main() {
     );
   }
 
+  // 3) Import Task Images / Assets from _TaskAssetsDump if available
+  const assetsSheet = data["_TaskAssetsDump"];
+  if (assetsSheet) {
+    console.log("\nImporting task assets/images...");
+    let nImages = 0;
+    for (const row of assetsSheet.rows.slice(1)) {
+      const key = norm(row[0]);
+      const jsonStr = norm(row[1]);
+      if (!key.startsWith("LT_TASK_ASSETS_") || !jsonStr) continue;
+
+      const roomName = key.replace("LT_TASK_ASSETS_", "").trim();
+      const room = await prisma.room.findFirst({
+        where: { name: roomName },
+      });
+      if (!room) continue;
+
+      try {
+        const assets = JSON.parse(jsonStr);
+        for (const asset of assets) {
+          if (!asset.imageUrl) continue;
+          
+          const task = await prisma.task.findFirst({
+            where: {
+              roomId: room.id,
+              name: asset.name.trim(),
+            },
+          });
+          if (task) {
+            await prisma.task.update({
+              where: { id: task.id },
+              data: { imageUrl: asset.imageUrl },
+            });
+            nImages++;
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to parse assets JSON for ${roomName}:`, err);
+      }
+    }
+    console.log(`✓ Imported ${nImages} task images/worksheets`);
+  }
+
   console.log(
     `\nDONE → rooms=${nRooms} tasks=${nTasks} students=${nStudents} scores=${nScores}`
   );

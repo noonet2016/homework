@@ -8,7 +8,6 @@ const envPath = path.join(__dirname, "..", ".env");
 if (fs.existsSync(envPath)) {
   let envContent = fs.readFileSync(envPath, "utf8");
   console.log(".env file size:", envContent.length, "bytes");
-  console.log(".env content raw:", JSON.stringify(envContent.slice(0, 100)) + (envContent.length > 100 ? "..." : ""));
   
   // Strip UTF-8 BOM if present
   if (envContent.startsWith("\uFEFF")) {
@@ -18,12 +17,18 @@ if (fs.existsSync(envPath)) {
   const loadedKeys = [];
   envContent.split(/\r?\n/).forEach((line) => {
     const trimmedLine = line.trim();
-    // Skip comments and empty lines
-    if (trimmedLine.startsWith("#") || !trimmedLine.includes("=")) return;
+    // Skip comments and lines without separators
+    if (trimmedLine.startsWith("#")) return;
     
-    const [key, ...valueParts] = trimmedLine.split("=");
+    // Support both '=' and ':' as separators
+    const hasEquals = trimmedLine.includes("=");
+    const hasColon = trimmedLine.includes(":");
+    if (!hasEquals && !hasColon) return;
+    
+    const separator = hasEquals ? "=" : ":";
+    const [key, ...valueParts] = trimmedLine.split(separator);
     const trimmedKey = key.trim();
-    let value = valueParts.join("=").trim();
+    let value = valueParts.join(separator).trim();
     
     // Remove surrounding quotes if present
     if (

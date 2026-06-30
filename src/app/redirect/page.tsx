@@ -61,11 +61,26 @@ export default async function RedirectBridgePage({ searchParams }: RedirectPageP
   }
 
   // 3. Redirect to the correct Next.js route:
-  if (mode === "grade") {
-    // Teacher quick grading mode
-    redirect(`/grade/${room.id}/${student.id}`);
-  } else {
-    // Student gamer profile status view mode
-    redirect(`/view/${room.id}/${student.id}`);
-  }
+  const targetUrl = mode === "grade"
+    ? `/grade/${room.id}/${student.id}`
+    : `/view/${room.id}/${student.id}`;
+
+  return (
+    <html lang="th">
+      <head>
+        <title>กำลังเปลี่ยนเส้นทาง...</title>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.location.replace("${targetUrl}");`,
+          }}
+        />
+      </head>
+      <body style={{ background: "#0f172a", color: "#94a3b8", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", fontFamily: "system-ui, sans-serif" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "1rem", animation: "spin 2s linear infinite" }}>⏳</div>
+          <p>กำลังเตรียมพร้อมข้อมูลปลายทาง...</p>
+        </div>
+      </body>
+    </html>
+  );
 }

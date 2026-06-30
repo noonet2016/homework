@@ -91,7 +91,7 @@ export default async function Home() {
 
             {/* ===== Center: rooms ===== */}
             <section className="p-5 md:p-6 border-r border-[#e6ecf6]">
-              <div className="content-topbar flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <div className="content-topbar flex items-center justify-between gap-3 mb-4 flex-wrap pl-12 lg:pl-0">
                 <div className="flex items-center gap-2">
                   <h2 className="text-2xl md:text-3xl font-black text-[#111827] leading-tight">
                     🎓 ห้องเรียนครูตั๊ก

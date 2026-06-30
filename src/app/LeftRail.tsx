@@ -55,15 +55,22 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
 
       {/* Mobile Drawer Menu */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[100000] lg:hidden animate-fade-in">
+        <div 
+          className="fixed inset-0 z-[100000] lg:hidden animate-fade-in"
+          style={{ display: 'block' }}
+        >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ backgroundColor: "rgba(0, 0, 0, 0.65)" }}
             onClick={() => setMobileOpen(false)}
           />
           
           {/* Drawer Content */}
-          <div className="absolute inset-y-0 left-0 w-64 bg-slate-900 text-slate-100 p-5 flex flex-col gap-6 shadow-2xl animate-slide-right">
+          <div 
+            className="absolute inset-y-0 left-0 w-64 p-5 flex flex-col gap-6 shadow-2xl animate-slide-right"
+            style={{ backgroundColor: "#0f172a", color: "#f8fafc" }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -74,7 +81,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
               </div>
               <button
                 onClick={() => setMobileOpen(false)}
-                className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white"
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white"
+                style={{ backgroundColor: "#1e293b" }}
               >
                 ✕
               </button>
@@ -84,7 +92,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
             <nav className="flex flex-col gap-1.5 flex-1 overflow-y-auto">
               <span
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-bold cursor-pointer"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-white font-bold cursor-pointer"
+                style={{ backgroundColor: "#1e293b" }}
               >
                 <i className="fa-solid fa-house w-5 text-center text-indigo-400" />
                 หน้าหลัก
@@ -96,7 +105,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
                     setMobileOpen(false);
                     handleAddRoom();
                   }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left transition hover:bg-slate-800"
+                  style={{ backgroundColor: "transparent" }}
                 >
                   <i className="fa-solid fa-circle-plus w-5 text-center text-emerald-400" />
                   เพิ่มห้องเรียน
@@ -107,7 +117,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
                 <Link
                   href="/reports"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white font-semibold cursor-pointer transition hover:bg-slate-800"
+                  style={{ backgroundColor: "transparent" }}
                 >
                   <i className="fa-solid fa-chart-simple w-5 text-center text-amber-400" />
                   รายงานความก้าวหน้า
@@ -120,7 +131,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
                     setMobileOpen(false);
                     openDeviceManager();
                   }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left transition hover:bg-slate-800"
+                  style={{ backgroundColor: "transparent" }}
                 >
                   <i className="fa-solid fa-shield-halved w-5 text-center text-blue-400" />
                   อุปกรณ์ที่เชื่อถือ
@@ -132,7 +144,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
                   setMobileOpen(false);
                   setGuideOpen(true);
                 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left transition hover:bg-slate-800"
+                style={{ backgroundColor: "transparent" }}
               >
                 <i className="fa-solid fa-book-open w-5 text-center text-sky-400" />
                 คู่มือการใช้งาน
@@ -143,7 +156,8 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
                   setMobileOpen(false);
                   openDev();
                 }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white font-semibold cursor-pointer w-full text-left transition hover:bg-slate-800"
+                style={{ backgroundColor: "transparent" }}
               >
                 <i className="fa-solid fa-code w-5 text-center text-pink-400" />
                 ผู้พัฒนา
@@ -157,11 +171,12 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
                   setMobileOpen(false);
                   handleTeacherAuthClick();
                 }}
-                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold transition ${
-                  isTeacher
-                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/10"
-                }`}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold transition shadow-lg"
+                style={{ 
+                  backgroundColor: isTeacher ? "rgba(244, 63, 94, 0.15)" : "#4f46e5", 
+                  color: isTeacher ? "#f43f5e" : "#ffffff",
+                  border: isTeacher ? "1px solid rgba(244, 63, 94, 0.3)" : "none"
+                }}
               >
                 <i className={`fa-solid ${isTeacher ? "fa-right-from-bracket" : "fa-user-shield"}`} />
                 {isTeacher ? "ออกจากโหมดครู" : "เข้าสู่โหมดครู"}

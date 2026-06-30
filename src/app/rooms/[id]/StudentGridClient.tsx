@@ -70,6 +70,24 @@ export default function StudentGridClient({
   const [selectedStudent, setSelectedStudent] = useState<StudentCardData | null>(null);
   const autoOpenedRef = useRef(false);
   const totalAssignedTasks = tasks.length;
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Listen to select mode toggle event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const active = (e as CustomEvent).detail?.active ?? false;
+      setIsSelectMode(active);
+      setSelectedIds([]);
+    };
+    window.addEventListener("toggle-select-mode", handler);
+    return () => window.removeEventListener("toggle-select-mode", handler);
+  }, []);
+
+  // Dispatch selection changes to ClassroomManagerClient
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("selection-changed", { detail: { ids: selectedIds } }));
+  }, [selectedIds]);
 
   useEffect(() => {
     const desktop = document.getElementById("student-search-input") as HTMLInputElement | null;
@@ -150,17 +168,76 @@ export default function StudentGridClient({
               key={student.id}
               role="button"
               tabIndex={0}
-              className="relative bg-gradient-to-br from-[#ffffff] to-[#f3f5ff] rounded-3xl p-4 shadow cursor-pointer border border-[#e4e9ff] hover:shadow-lg transition-transform hover:-translate-y-1 text-[#27345b]"
-              onClick={() => setSelectedStudent(student)}
+              className={`relative bg-gradient-to-br from-[#ffffff] to-[#f3f5ff] rounded-3xl p-4 shadow cursor-pointer border hover:shadow-lg transition-all hover:-translate-y-1 text-[#27345b] ${selectedIds.includes(student.id) ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-[#e4e9ff]"}`}
+              onClick={() => {
+                if (isSelectMode) {
+                  const isSelected = selectedIds.includes(student.id);
+                  setSelectedIds(
+                    isSelected
+                      ? selectedIds.filter((id) => id !== student.id)
+                      : [...selectedIds, student.id]
+                  );
+                } else {
+                  setSelectedStudent(student);
+                }
+              }}
               onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") setSelectedStudent(student);
+                if (event.key === "Enter" || event.key === " ") {
+                  if (isSelectMode) {
+                    const isSelected = selectedIds.includes(student.id);
+                    setSelectedIds(
+                      isSelected
+                        ? selectedIds.filter((id) => id !== student.id)
+                        : [...selectedIds, student.id]
+                    );
+                  } else {
+                    setSelectedStudent(student);
+                  }
+                }
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold bg-[#eef1ff] px-2 py-1 rounded-full">
-                  {getRankBadge(idx)}
-                </span>
-                <span>{getStatusIcon(pending)}</span>
+                <div className="flex items-center gap-2">
+                  {isSelectMode && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(student.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        const isSelected = selectedIds.includes(student.id);
+                        setSelectedIds(
+                          isSelected
+                            ? selectedIds.filter((id) => id !== student.id)
+                            : [...selectedIds, student.id]
+                        );
+                      }}
+                      className="w-5 h-5 cursor-pointer accent-indigo-600 shrink-0"
+                    />
+                  )}
+                  <span className="text-xs font-bold bg-[#eef1ff] px-2 py-1 rounded-full">
+                    {getRankBadge(idx)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {getStatusIcon(pending)}
+                  {isTeacher && !isSelectMode && (
+                    <button
+                      type="button"
+                      title="แก้ไขข้อมูลนักเรียน"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.dispatchEvent(
+                          new CustomEvent("open-edit-student", {
+                            detail: { student },
+                          })
+                        );
+                      }}
+                      className="text-slate-400 hover:text-slate-600 text-xl leading-none p-1 rounded hover:bg-slate-200/50 transition-colors"
+                    >
+                      <i className="fa-solid fa-ellipsis-vertical" />
+                    </button>
+                  )}
+                </div>
               </div>
               <h3
                 title={student.name}

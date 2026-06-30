@@ -32,6 +32,7 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirmTask, setDeleteConfirmTask] = useState<{ id: string; name: string } | null>(null);
   const [clearConfirmTask, setClearConfirmTask] = useState<{ id: string; name: string } | null>(null);
+  const [deleteConfirmStudent, setDeleteConfirmStudent] = useState<{ id: string; name: string } | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [imagePickerIdx, setImagePickerIdx] = useState<number | null>(null);
   const [imagePickerUrl, setImagePickerUrl] = useState("");
@@ -263,6 +264,24 @@ async function handleSaveTasks() {
     router.refresh();
   }
 
+  async function handleCreateStudent(fd: FormData) {
+    await createStudent(fd);
+    close();
+    router.refresh();
+  }
+
+  async function handleUpdateStudent(fd: FormData) {
+    await updateStudent(fd);
+    close();
+    router.refresh();
+  }
+
+  async function handleDeleteStudentSubmit(fd: FormData) {
+    await deleteStudent(fd);
+    close();
+    router.refresh();
+  }
+
   // Listen for selection-changed events from StudentGridClient
   useEffect(() => {
     const handler = (e: Event) => {
@@ -271,6 +290,19 @@ async function handleSaveTasks() {
     };
     window.addEventListener("selection-changed", handler);
     return () => window.removeEventListener("selection-changed", handler);
+  }, []);
+
+  // Listen for open-edit-student events from StudentGridClient
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const student = (e as CustomEvent).detail?.student;
+      if (student) {
+        setEditingStudent(student);
+        setOpenModal("editStudent");
+      }
+    };
+    window.addEventListener("open-edit-student", handler);
+    return () => window.removeEventListener("open-edit-student", handler);
   }, []);
 
   // Generate teacher+student QR URLs when classQr modal opens
@@ -587,7 +619,7 @@ async function handleSaveTasks() {
       {/* ===== Add Student Modal ===== */}
       {openModal === "addStudent" && (
         <div className="fixed inset-0 z-[57] bg-black/60 flex items-center justify-center p-4">
-          <form action={createStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
+          <form action={handleCreateStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
             <input type="hidden" name="roomId" value={roomId} />
             <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
             <h3 className="text-2xl font-black text-[#1e2d52] mb-4 flex items-center gap-2">
@@ -610,7 +642,7 @@ async function handleSaveTasks() {
       {openModal === "editStudent" && (
         <div className="fixed inset-0 z-[58] bg-black/60 flex items-center justify-center p-4">
           {editingStudent ? (
-            <form action={updateStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
+            <form action={handleUpdateStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
               <input type="hidden" name="id" value={editingStudent.id} />
               <input type="hidden" name="roomId" value={roomId} />
               <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
@@ -619,14 +651,18 @@ async function handleSaveTasks() {
               </h3>
               <StudentFields student={editingStudent} />
               <div className="flex justify-end gap-2 mt-5">
-                <button type="submit" form={`delete-student-${editingStudent.id}`} className="px-4 py-2 rounded bg-red-600 text-white font-semibold mr-auto">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmStudent({ id: editingStudent.id, name: editingStudent.name })}
+                  className="px-4 py-2 rounded bg-red-600 text-white font-semibold mr-auto"
+                >
                   <i className="fa-solid fa-trash-can mr-1" />ลบนักเรียน
                 </button>
                 <button type="button" onClick={() => setEditingStudent(null)} className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                   <i className="fa-solid fa-xmark mr-1" />ยกเลิก
                 </button>
-                <button type="submit" className="px-4 py-2 rounded bg-amber-500 text-white font-semibold">
-                  <i className="fa-solid fa-floppy-disk mr-1" />บันทึก
+                <button type="submit" className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-colors">
+                  <i className="fa-solid fa-floppy-disk mr-1" />บันทึกข้อมูล
                 </button>
               </div>
             </form>
@@ -641,10 +677,10 @@ async function handleSaveTasks() {
                   <p className="text-center text-slate-500 py-6">ยังไม่มีนักเรียนในห้องนี้</p>
                 ) : students.map((student) => (
                   <button
-                    key={student.id}
-                    type="button"
-                    onClick={() => setEditingStudent(student)}
-                    className="w-full rounded-xl border bg-slate-50 px-3 py-2 text-left hover:bg-amber-50"
+                     key={student.id}
+                     type="button"
+                     onClick={() => setEditingStudent(student)}
+                     className="w-full rounded-xl border bg-slate-50 px-3 py-2 text-left hover:bg-amber-50"
                   >
                     <span className="font-bold text-[#1e2d52]">{student.name}</span>
                     <span className="block text-sm text-slate-500">เลขที่ {student.number ?? "-"} · รหัส {student.code || "-"}</span>
@@ -654,7 +690,7 @@ async function handleSaveTasks() {
             </div>
           )}
           {editingStudent && (
-            <form id={`delete-student-${editingStudent.id}`} action={deleteStudent}>
+            <form id={`delete-student-${editingStudent.id}`} action={handleDeleteStudentSubmit}>
               <input type="hidden" name="id" value={editingStudent.id} />
               <input type="hidden" name="roomId" value={roomId} />
             </form>
@@ -775,6 +811,40 @@ async function handleSaveTasks() {
               </button>
               <button type="button" onClick={confirmClearScores} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600">
                 <i className="fa-solid fa-eraser" /> ยืนยันล้างคะแนน
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Delete Student Confirm Modal ===== */}
+      {deleteConfirmStudent && (
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
+            <button type="button" onClick={() => setDeleteConfirmStudent(null)} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
+              <i className="fa-solid fa-xmark" />
+            </button>
+            <h3 className="text-2xl font-black text-[#1e2d52] mb-2 flex items-center gap-2">
+              <i className="fa-solid fa-trash-can text-red-500" /> ยืนยันการลบนักเรียน
+            </h3>
+            <p className="text-slate-700 mb-2">ต้องการลบ &ldquo;{deleteConfirmStudent.name}&rdquo; ใช่หรือไม่?</p>
+            <p className="text-red-500 text-sm font-semibold mb-6">หมายเหตุ: คะแนนและข้อมูลทั้งหมดของนักเรียนคนนี้จะถูกลบออกถาวร</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setDeleteConfirmStudent(null)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
+                <i className="fa-solid fa-xmark" /> ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const fd = new FormData();
+                  fd.set("id", deleteConfirmStudent.id);
+                  fd.set("roomId", roomId);
+                  setDeleteConfirmStudent(null);
+                  await handleDeleteStudentSubmit(fd);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700"
+              >
+                <i className="fa-solid fa-trash-can" /> ยืนยันลบ
               </button>
             </div>
           </div>

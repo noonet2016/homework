@@ -5,6 +5,8 @@ import "./gas-theme.css";
 import "./drag.css";
 import { getSession } from "@/lib/auth";
 import TeacherAuthChip from "./TeacherAuthChip";
+import DeviceAutoLogin from "./DeviceAutoLogin";
+import DeviceManagerModal from "./DeviceManagerModal";
 import DeveloperModal from "./DeveloperModal";
 import DeveloperModalClient from "./DeveloperModalClient";
 import AddRoomModal from "./AddRoomModal";
@@ -37,6 +39,8 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <TeacherAuthChip isTeacher={isTeacher} />
+        <DeviceAutoLogin isTeacher={isTeacher} />
+        <DeviceManagerModal />
         <Loader />
         <ToastContainer />
         <DeveloperModalClient />

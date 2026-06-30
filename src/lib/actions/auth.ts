@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession } from "@/lib/auth";
+import { pauseDeviceAutoLogin } from "@/lib/device";
 
 export type LoginState = { error?: string; ok?: boolean };
 
@@ -23,10 +24,14 @@ export async function login(
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return { error: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
 
-  await createSession(user.role, remember);
+  await createSession(user.role, user.id, remember);
   return { ok: true };
 }
 
 export async function logout(): Promise<void> {
   await destroySession();
+  // Logout ends this session but keeps the trusted device. Pause device
+  // auto-login for this browser session so the user actually stays logged
+  // out now; reopening the browser re-enables auto-login on the device.
+  await pauseDeviceAutoLogin();
 }

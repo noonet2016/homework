@@ -324,10 +324,11 @@ async function handleSaveTasks() {
       <button
         type="button"
         onClick={() => setOpenModal("sheet")}
-        className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95"
+        className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-3 sm:px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95"
+        title="จัดการห้องเรียน"
       >
         <i className="fa-solid fa-wand-magic-sparkles" />
-        จัดการห้องเรียน
+        <span className="hidden sm:inline">จัดการห้องเรียน</span>
       </button>
 
       {/* Delete selected banner */}
@@ -432,7 +433,7 @@ async function handleSaveTasks() {
       {/* ===== Task Manager Modal ===== */}
       {openModal === "tasks" && (
         <div id="task-manager-modal" className="fixed inset-0 z-[63] bg-black/60 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl p-5 w-full max-w-2xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop">
+          <div className="relative bg-white rounded-2xl p-5 w-full max-w-2xl lg:max-w-5xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop">
             <button type="button" onClick={close} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
               <i className="fa-solid fa-xmark" />
             </button>
@@ -586,7 +587,7 @@ async function handleSaveTasks() {
       {/* ===== Add Student Modal ===== */}
       {openModal === "addStudent" && (
         <div className="fixed inset-0 z-[57] bg-black/60 flex items-center justify-center p-4">
-          <form action={createStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+          <form action={createStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
             <input type="hidden" name="roomId" value={roomId} />
             <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
             <h3 className="text-2xl font-black text-[#1e2d52] mb-4 flex items-center gap-2">
@@ -609,7 +610,7 @@ async function handleSaveTasks() {
       {openModal === "editStudent" && (
         <div className="fixed inset-0 z-[58] bg-black/60 flex items-center justify-center p-4">
           {editingStudent ? (
-            <form action={updateStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+            <form action={updateStudent} className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
               <input type="hidden" name="id" value={editingStudent.id} />
               <input type="hidden" name="roomId" value={roomId} />
               <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
@@ -630,7 +631,7 @@ async function handleSaveTasks() {
               </div>
             </form>
           ) : (
-            <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+            <div className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
               <button type="button" onClick={close} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
               <h3 className="text-2xl font-black text-[#1e2d52] mb-4 flex items-center gap-2">
                 <i className="fa-solid fa-user-pen text-amber-500" /> เลือกนักเรียนที่ต้องการแก้ไข
@@ -664,7 +665,7 @@ async function handleSaveTasks() {
       {/* ===== Image Picker Modal (upload file OR enter URL) ===== */}
       {imagePickerIdx !== null && (
         <div className="fixed inset-0 z-[76] bg-black/60 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
             <button type="button" onClick={closeImagePicker} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
               <i className="fa-solid fa-xmark" />
             </button>
@@ -723,7 +724,7 @@ async function handleSaveTasks() {
       {/* ===== Image Preview Modal ===== */}
       {previewImageUrl && (
         <div className="fixed inset-0 z-[75] bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewImageUrl(null)}>
-          <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-3xl lg:max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
             <button type="button" onClick={() => setPreviewImageUrl(null)} className="absolute -right-3 -top-3 w-9 h-9 flex items-center justify-center rounded-full bg-white text-slate-700 shadow-lg hover:bg-slate-100 z-10">
               <i className="fa-solid fa-xmark" />
             </button>
@@ -735,7 +736,7 @@ async function handleSaveTasks() {
       {/* ===== Delete Task Confirm Modal ===== */}
       {deleteConfirmTask && (
         <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
             <button type="button" onClick={() => setDeleteConfirmTask(null)} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
               <i className="fa-solid fa-xmark" />
             </button>
@@ -759,7 +760,7 @@ async function handleSaveTasks() {
       {/* ===== Clear Scores Confirm Modal ===== */}
       {clearConfirmTask && (
         <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop">
             <button type="button" onClick={() => setClearConfirmTask(null)} className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200" aria-label="Close">
               <i className="fa-solid fa-xmark" />
             </button>
@@ -788,7 +789,7 @@ async function handleSaveTasks() {
       {/* ===== Class QR Modal ===== */}
       {openModal === "classQr" && (
         <div className="fixed inset-0 z-[59] bg-black/60 flex items-center justify-center p-4">
-          <div className="relative bg-white rounded-2xl w-full max-w-3xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop overflow-hidden">
+          <div className="relative bg-white rounded-2xl w-full max-w-3xl lg:max-w-4xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop overflow-hidden">
             {/* Header */}
             <div className="shrink-0 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
@@ -1083,7 +1084,7 @@ function BulkAddModal({ roomId, onClose }: { roomId: string; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-[57] bg-black/60 flex items-center justify-center p-4">
-      <form action={handleSubmit} className="relative bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop overflow-y-auto">
+      <form action={handleSubmit} className="relative bg-white rounded-2xl p-6 w-full max-w-2xl lg:max-w-4xl max-h-[92dvh] shadow-2xl flex flex-col animate-modal-pop overflow-y-auto">
         <input type="hidden" name="roomId" value={roomId} />
         <button type="button" onClick={onClose} className="absolute right-3 top-3 modal-close-btn" aria-label="Close">✕</button>
         <h3 className="text-2xl font-black text-[#1e2d52] mb-1 flex items-center gap-2">

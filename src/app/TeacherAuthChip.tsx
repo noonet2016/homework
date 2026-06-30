@@ -10,35 +10,15 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
   const [open, setOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
   const chipRef = useRef<HTMLDivElement>(null);
   const lastPointerType = useRef<string>("mouse");
 
-  useEffect(() => {
-    const savedPass = localStorage.getItem("LT_ADMIN_PASS_REMEMBER");
-    const savedTime = localStorage.getItem("LT_ADMIN_PASS_TIME");
-    if (savedPass && savedTime) {
-      if (Date.now() - parseInt(savedTime, 10) < 10 * 60 * 1000) {
-        setPassword(savedPass);
-        setRemember(true);
-        // Auto-login ทันทีถ้ายังไม่ได้เป็นครู
-        if (!isTeacher) {
-          const fd = new FormData();
-          fd.append("username", "krutaktan");
-          fd.append("password", savedPass);
-          fd.append("remember", "on");
-          login({}, fd).then((res) => {
-            if (res.ok) router.refresh();
-          });
-        }
-      } else {
-        localStorage.removeItem("LT_ADMIN_PASS_REMEMBER");
-        localStorage.removeItem("LT_ADMIN_PASS_TIME");
-      }
-    }
-  }, []);
+  // Standard auth: the httpOnly session cookie keeps the teacher logged in
+  // (read server-side via getSession -> isTeacher). No client-side credential
+  // storage and no client auto-login. "Remember me" only controls how long
+  // that cookie lives (see lib/auth.ts). The browser's own password manager
+  // handles offering to save / pre-fill credentials.
 
   // Collapse mobile-expanded chip when tapping outside
   useEffect(() => {
@@ -63,15 +43,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
     async (prev, fd) => {
       const res = await login(prev, fd);
       if (res.ok) {
-        const rem = fd.get("remember") === "on";
-        const pass = fd.get("password") as string;
-        if (rem && pass) {
-          localStorage.setItem("LT_ADMIN_PASS_REMEMBER", pass);
-          localStorage.setItem("LT_ADMIN_PASS_TIME", Date.now().toString());
-        } else {
-          localStorage.removeItem("LT_ADMIN_PASS_REMEMBER");
-          localStorage.removeItem("LT_ADMIN_PASS_TIME");
-        }
+        setShowPassword(false);
         setOpen(false);
         if (typeof window !== "undefined" && (window as any).notify) {
           (window as any).notify("เข้าสู่โหมดคุณครูแล้ว", "success");
@@ -124,19 +96,13 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
         </button>
       </div>
 
-      {/* Hidden form to trigger browser credentials auto-save and auto-fill */}
-      <form className="w-0 h-0 overflow-hidden absolute pointer-events-none" aria-hidden="true">
-        <input type="text" name="username" autoComplete="username" defaultValue="krutaktan" readOnly />
-        <input type="password" name="password" autoComplete="current-password" value={password} readOnly />
-      </form>
-
       {open && (
         <div
           className="fixed inset-0 z-[1000002] bg-black/60 flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setOpen(false)}
         >
           <div
-            className="relative bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-modal-pop"
+            className="relative bg-white rounded-2xl p-6 w-full max-w-sm md:max-w-md shadow-2xl animate-modal-pop"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -156,8 +122,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                   type="text"
                   name="username"
                   placeholder="ชื่อผู้ใช้"
-                  autoFocus={false}
-                  defaultValue="krutaktan"
+                  autoFocus
                   autoComplete="username"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -172,11 +137,8 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                 <input
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  autoFocus={true}
                   placeholder="รหัสผ่านครู"
                   autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -199,11 +161,9 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                 <input
                   type="checkbox"
                   name="remember"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium text-slate-600">จำการเข้าสู่ระบบ 10 นาที</span>
+                <span className="text-sm font-medium text-slate-600">จำการเข้าสู่ระบบไว้ (7 วัน)</span>
               </label>
 
               {state.error && (
@@ -236,7 +196,7 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
           onClick={() => setShowLogoutConfirm(false)}
         >
           <div
-            className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop text-left"
+            className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -262,6 +222,8 @@ export default function TeacherAuthChip({ isTeacher }: { isTeacher: boolean }) {
                 type="button"
                 onClick={() => {
                   setShowLogoutConfirm(false);
+                  // Logout = destroy the session cookie (server-side). Remember
+                  // me does not survive an explicit logout.
                   logout().then(() => {
                     if (typeof window !== "undefined" && (window as any).notify) {
                       (window as any).notify("ออกจากโหมดคุณครูแล้ว", "info");

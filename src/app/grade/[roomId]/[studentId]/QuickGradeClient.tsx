@@ -190,6 +190,7 @@ export default function QuickGradeClient({
           <img
             src={lightboxUrl}
             alt="ใบงาน"
+            referrerPolicy="no-referrer"
             className="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />

@@ -14,6 +14,21 @@ type StudentScoreModalProps = {
   onClose: () => void;
 };
 
+// Google Drive images can 403 in-browser based on the Referer header (curl works
+// because it sends none). We strip the referrer and, on error, fall through
+// alternate Drive image URL formats — same idea as the old GAS app.
+function driveImageCandidates(url: string): string[] {
+  const m = url.match(/\/d\/([A-Za-z0-9_-]{20,})/) || url.match(/[?&]id=([A-Za-z0-9_-]{20,})/);
+  const id = m?.[1];
+  const list = [url];
+  if (id) {
+    list.push(`https://lh3.googleusercontent.com/d/${id}=w2000`);
+    list.push(`https://drive.google.com/thumbnail?id=${id}&sz=w2000`);
+    list.push(`https://drive.google.com/uc?export=view&id=${id}`);
+  }
+  return Array.from(new Set(list));
+}
+
 export default function StudentScoreModal({
   roomId,
   student,
@@ -40,9 +55,6 @@ export default function StudentScoreModal({
     const value = Number(values[task.id] || "0");
     return sum + (Number.isFinite(value) ? value : 0);
   }, 0);
-  const [firstName, ...lastNameParts] = student.name.trim().split(/\s+/);
-  const lastName = lastNameParts.join(" ");
-
   function closeModal() {
     if (!isPending) onClose();
   }
@@ -68,7 +80,7 @@ export default function StudentScoreModal({
     >
       <div
         id="modal-content"
-        className="flex h-[92dvh] w-full max-w-md flex-col gap-2 animate-modal-pop"
+        className="flex h-[92dvh] w-full max-w-md md:max-w-3xl lg:max-w-5xl flex-col gap-2 animate-modal-pop"
       >
         <div className="flex justify-end shrink-0">
           <button
@@ -88,17 +100,16 @@ export default function StudentScoreModal({
               <div className="min-w-0">
                 <h3
                   title={student.name}
-                  className="font-bold leading-tight text-xl md:text-2xl"
+                  className="font-bold leading-tight text-xl md:text-2xl whitespace-normal md:whitespace-nowrap md:truncate"
                 >
-                  <span className="block truncate">{firstName || student.name}</span>
-                  {lastName ? <span className="block truncate">{lastName}</span> : null}
+                  {student.name}
                 </h3>
-                <p className="text-slate-500 text-sm mt-1 flex flex-wrap gap-x-3">
+                <p className="text-slate-500 text-sm mt-1 flex flex-wrap gap-x-3 md:flex-nowrap md:whitespace-nowrap">
                   <span className="whitespace-nowrap">เลขที่ {student.number ?? "-"}</span>
                   <span className="whitespace-nowrap">รหัส {student.code || "-"}</span>
                 </p>
                 {student.nickname ? (
-                  <p className="text-indigo-500 text-sm">{`ชื่อเล่น: ${student.nickname}`}</p>
+                  <p className="text-indigo-500 text-sm md:whitespace-nowrap">{`ชื่อเล่น: ${student.nickname}`}</p>
                 ) : null}
               </div>
               <div className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white px-3 py-2 text-center shadow-sm">
@@ -264,8 +275,18 @@ export default function StudentScoreModal({
           <img
             src={lightboxUrl}
             alt="ใบงาน"
+            referrerPolicy="no-referrer"
             className="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain"
             onClick={(e) => e.stopPropagation()}
+            onError={(e) => {
+              const img = e.currentTarget;
+              const cands = driveImageCandidates(lightboxUrl);
+              const next = Number(img.dataset.ci || "0") + 1;
+              if (next < cands.length) {
+                img.dataset.ci = String(next);
+                img.src = cands[next];
+              }
+            }}
           />
           <div className="flex gap-3 mt-4" onClick={(e) => e.stopPropagation()}>
             <a
@@ -280,7 +301,7 @@ export default function StudentScoreModal({
               onClick={() => {
                 const w = window.open("", "_blank");
                 if (!w) return;
-                w.document.write(`<!DOCTYPE html><html><head><title>พิมพ์ใบงาน</title><style>*{margin:0;padding:0}body{display:flex;justify-content:center;align-items:flex-start}img{max-width:100%;height:auto}</style></head><body><img src="${lightboxUrl}" onload="window.print()"/></body></html>`);
+                w.document.write(`<!DOCTYPE html><html><head><title>พิมพ์ใบงาน</title><style>*{margin:0;padding:0}body{display:flex;justify-content:center;align-items:flex-start}img{max-width:100%;height:auto}</style></head><body><img src="${lightboxUrl}" referrerpolicy="no-referrer" onload="window.print()"/></body></html>`);
                 w.document.close();
               }}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"

@@ -19,6 +19,25 @@ model User {
   role         String   @default("TEACHER") // TEACHER | ADMIN
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  devices      TrustedDevice[]
+}
+
+// A "trusted device": persistent-login token so a regularly-used device can
+// auto-login without typing the password. selector:validator pattern — selector
+// is the lookup key, only the HASH of the validator is stored (raw token never
+// hits the DB). Rotated on each use; revocable; expires (default 90 days).
+model TrustedDevice {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selector      String   @unique
+  validatorHash String
+  label         String
+  createdAt     DateTime @default(now())
+  lastUsedAt    DateTime @default(now())
+  expiresAt     DateTime
+
+  @@index([userId])
 }
 
 // One classroom (was one Google Sheet tab).

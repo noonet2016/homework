@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import ClassroomManagerClient from "./ClassroomManagerClient";
 import StudentGridClient, { type StudentCardData, type TaskData } from "./StudentGridClient";
+import RoomTitle from "./RoomTitle";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,7 @@ export default async function RoomPage({
   return (
     <section id="student-grid-container" className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
+        <div className="flex items-center justify-between mb-5 gap-2 flex-wrap pr-14 md:pr-0">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Link
               href="/"
@@ -99,10 +100,7 @@ export default async function RoomPage({
             >
               <i className="fa-solid fa-arrow-left" />
             </Link>
-            <h2 id="class-title" className="text-2xl sm:text-3xl font-bold truncate">
-              <span className="mr-2">{room.icon || "🧩"}</span>
-              {room.name}
-            </h2>
+            <RoomTitle icon={room.icon} name={room.name} />
           </div>
 
           <div className="hidden md:flex flex-1 max-w-sm mr-4 relative group">

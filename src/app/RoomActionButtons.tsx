@@ -104,7 +104,7 @@ export default function RoomActionButtons({ id, name }: RoomActionButtonsProps) 
           onClick={() => setShowDuplicateConfirm(false)}
         >
           <div
-            className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop text-left"
+            className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -197,7 +197,7 @@ export default function RoomActionButtons({ id, name }: RoomActionButtonsProps) 
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div
-            className="relative bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-modal-pop text-left"
+            className="relative bg-white rounded-2xl p-6 w-full max-w-sm md:max-w-md shadow-2xl animate-modal-pop text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <button

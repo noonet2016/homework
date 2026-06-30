@@ -50,7 +50,7 @@ export default function RoomEditModal({ id, name, icon, usedIcons }: RoomEditMod
           onClick={() => setOpen(false)}
         >
           <div
-            className="relative bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm animate-modal-pop text-left"
+            className="relative bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm md:max-w-md animate-modal-pop text-left"
             onClick={(e) => e.stopPropagation()}
           >
             <button

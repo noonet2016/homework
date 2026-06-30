@@ -79,7 +79,7 @@ export default function QuickGradeQrModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl shadow-xl w-full max-w-3xl p-6 flex flex-col gap-4 max-h-[92dvh] overflow-y-auto"
+        className="bg-white rounded-3xl shadow-xl w-full max-w-3xl lg:max-w-4xl p-6 flex flex-col gap-4 max-h-[92dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-full flex justify-between items-center">

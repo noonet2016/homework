@@ -24,6 +24,9 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
 
   const openDev = () => window.dispatchEvent(new CustomEvent("open-dev-modal"));
 
+  const openDeviceManager = () =>
+    window.dispatchEvent(new CustomEvent("open-device-manager"));
+
   return (
     <>
       <aside className="left-rail p-4 hidden lg:flex flex-col items-center gap-4">
@@ -46,6 +49,15 @@ export default function LeftRail({ isTeacher, usedIcons = [] }: LeftRailProps) {
           <Link href="/reports" className="rail-btn fa-btn" title="รายงานความก้าวหน้า">
             <i className="fa-solid fa-chart-simple" />
           </Link>
+        )}
+        {isTeacher && (
+          <span
+            className="rail-btn fa-btn cursor-pointer"
+            title="อุปกรณ์ที่เชื่อถือ"
+            onClick={openDeviceManager}
+          >
+            <i className="fa-solid fa-shield-halved" />
+          </span>
         )}
         <span
           className="rail-btn fa-btn cursor-pointer"

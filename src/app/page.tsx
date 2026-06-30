@@ -99,7 +99,7 @@ export default async function Home() {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <input
-                    className="w-[260px] md:w-[340px] rounded-full border border-slate-300 px-4 py-2.5 text-base bg-white"
+                    className="h-11 w-[260px] md:w-[340px] rounded-full border border-slate-300 px-4 text-base bg-white"
                     placeholder="Search"
                   />
                   <TopbarActions isTeacher={isTeacher} usedIcons={roomStats.map((r) => r.icon)} />

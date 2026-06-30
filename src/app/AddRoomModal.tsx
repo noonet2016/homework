@@ -52,7 +52,7 @@ export default function AddRoomModal() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-modal-pop"
+        className="relative bg-white rounded-2xl p-6 w-full max-w-md md:max-w-lg shadow-2xl animate-modal-pop"
         onClick={(e) => e.stopPropagation()}
       >
         <button

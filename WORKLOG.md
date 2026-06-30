@@ -283,3 +283,29 @@ NEXT STEPS (per Trainer's earlier choice = polish then deploy):
 - Verify trusted-device + worksheet images work over HTTPS in prod.
 - Re-import note: production DB needs the same Sheet data load + Task.imageUrl update + code ".0" cleanup (or just dump/restore homework_dev once schema matches).
 OPEN ITEMS: confirm Plesk SSH/Git access; SESSION_SECRET must be set in prod (else dev-insecure default).
+
+## 2026-06-30 (ช่วงค่ำ — Oguri Cap)
+
+- **Student View Lightbox (ใบงานป๊อปอัปฝั่งนักเรียน)**: 
+  - ทำการแยกส่วนแสดงผลหน้า Gamer Profile ฝั่งนักเรียนออกเป็น Client Component ที่ไฟล์ [src/app/view/[roomId]/[studentId]/StudentStatusClient.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/view/%5BroomId%5D/%5BstudentId%5D/StudentStatusClient.tsx) เพื่อรองรับการเปิดรูปใบงานเป็น Popup (Lightbox) ในหน้าเพจ แทนการเปิดแท็บเบราว์เซอร์ใหม่แบบเดิม
+  - นำเข้าความสามารถแสดงผล Lightbox เต็มระบบเหมือนฝั่งครู: ปุ่มสั่งพิมพ์รูปภาพทันที, ปุ่มดาวน์โหลด, และตัวดักจับความผิดพลาดลิงก์ Google Drive (Drive Image Fallback) พร้อม Referrer Policy ป้องกันปัญหา 403
+  - อัปเดตไฟล์หน้าหลัก [src/app/view/[roomId]/[studentId]/page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/view/%5BroomId%5D/%5BstudentId%5D/page.tsx) ให้เรียกใช้งานตัว Client Component ดังกล่าว
+- **สะพานเชื่อมลิงก์ QR Code (Redirect Bridge Route)**:
+  - สร้างหน้าเว็บตัวกลาง [src/app/redirect/page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/redirect/page.tsx) (เส้นทาง `/redirect`) เพื่อรองรับพารามิเตอร์ของ QR Code แบบเก่าบนสมุดจากระบบ GAS (`?sheet=ชื่อห้อง&studentId=เลขที่`) 
+  - ตัวสคริปต์จะแปลงค่าเป็นรหัส CUID จริงของระบบใหม่ และสั่งย้ายผู้ใช้ (Redirect) ไปยังห้องเรียนปลายทางที่ถูกต้องโดยอัตโนมัติ (เช่น หน้าให้คะแนนด่วนครู `/grade/...` หรือหน้านักเรียน `/view/...`) ช่วยประหยัดงบประมาณไม่ต้องจัดพิมพ์และติด QR Code ใหม่ให้เด็กๆ
+- **อัปเดตสเปรดชีตข้อมูลนักเรียนล่าสุด (Google Sheet Update)**:
+  - สั่งดึงข้อมูลสเปรดชีตล่าสุดที่มีการบันทึกคะแนนเพิ่มเติมจากครูผู้ช่วยมาลงฝั่ง Local เป็นไฟล์ `scratch/source.xlsx`
+  - สร้างสคริปต์ [scripts/parse-xlsx.py](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scripts/parse-xlsx.py) แปลงไฟล์ Excel ออกมาเป็นไฟล์ `scratch/sheets.json` (แก้ไขระบบจัดการ DateTime ล้มเหลวระหว่างแปลง และบันทึกคะแนนใหม่ล่าสุดเข้าระบบเรียบร้อยแล้ว)
+- **การติดตั้งระบบบนเซิร์ฟเวอร์ Plesk (Plesk NodeJS/MariaDB Deployment)**:
+  - **การตั้งค่า Standalone**: ยืนยันโครงสร้างบิลด์ `output: "standalone"` ใน `next.config.ts` สำเร็จ
+  - **สคริปต์สะพานเชื่อม CWD (CWD-independent scripts)**: เนื่องจาก Plesk มักสลับตำแหน่งโฟลเดอร์ทำงานชั่วคราวจนทำให้ Prisma CLI หาตำแหน่งไฟล์ไม่เจอ จึงเขียนสคริปต์ตัวช่วยเป็น Javascript สองไฟล์:
+    - [scripts/db-push.js](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scripts/db-push.js): สแกนหาไฟล์ `.env` ด้วยเส้นทางสัมบูรณ์ (Absolute Path) และยิงตัวแปรแบบ Inline เพื่อสั่งรัน `prisma db push`
+    - [scripts/seed-teacher.js](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scripts/seed-teacher.js) และ [scripts/import-sheet.js](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scripts/import-sheet.js): เรียกใช้แพ็กเกจ `tsx` ที่เพิ่มเข้าไปใน dependencies ของ [package.json](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/package.json) เพื่อรันสคริปต์ TypeScript ของระบบได้เสถียรบน Plesk โดยไม่ต้องติดตั้งระบบ Global
+  - **ปัญหา Prisma 7 Build-time Validation**: พบว่า Prisma 7 ยกเลิกการเขียนระบุคีย์ `url` ในไฟล์ `schema.prisma` แล้ว และบังคับให้เขียนลงใน `prisma.config.ts` แทน ส่งผลให้ระบบล้มเหลวขณะคอมไพล์ Next.js (เพราะยังไม่มี DATABASE_URL ในเครื่องบิลด์)
+    - *แนวทางแก้ไข*: ทำการสร้างไฟล์ `prisma.config.ts` ใหม่พร้อมระบุทางเลือกสำรอง `process.env.DATABASE_URL || "mysql://localhost:3306/placeholder"` ช่วยให้ระบบตรวจผ่านตอนคอมไพล์ และดึงข้อมูลจริงมาใช้ในขั้นตอนสั่งรัน
+  - **อักขระพิเศษในฐานข้อมูล**: พบปัญหาเครื่องหมาย `@` ในรหัสผ่าน MySQL ทำลายรูปแบบโครงสร้าง URL
+    - *แนวทางแก้ไข*: ทำการแปลงรหัส (URL Encode) จากอักขระ `@` ให้เป็น `%40` ในไฟล์คอนฟิก `.env`
+  - **การซิงค์ข้อมูลสมบูรณ์ (Database Parity)**: เพื่อให้ฐานข้อมูลฝั่ง Local และ Production ตรงกัน 100% ได้สั่งใช้ชุดคำสั่ง XAMPP ทำการดัมป์ฐานข้อมูลในเครื่องออกมาเป็นไฟล์ [scratch/db_dump.sql](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/scratch/db_dump.sql) (236KB) และให้เทรนเนอร์นำเข้าไปติดตั้งผ่าน phpMyAdmin บน Plesk สำเร็จลุล่วง
+  - บันทึกความพยายามทดสอบ: โครงสร้างฐานข้อมูลสร้างขึ้นเรียบร้อย ตารางครบถ้วน ข้อมูลนักเรียนและบัญชีคุณครู `krutaktan` ติดตั้งเสร็จสิ้น สมบูรณ์แบบ!
+
+- **Commit**: `dc4f043` (เพิ่มตัวซิงค์โคลอน), `0dbd464` (อัปเกรด dependencies tsx), `ea78774` (ย้ายสิทธิ์ config), `0b56b85` (ลบ config เก่า), `e78bde9` (สร้าง config คืนชีพ Prisma 7), `cce44e6` (สคริปต์คู่ขนาน), `b1f67fa` (Inline db URL) และ `5d222d9` (Placeholder fallback).

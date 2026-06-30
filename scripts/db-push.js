@@ -7,6 +7,9 @@ const envPath = path.join(__dirname, "..", ".env");
 
 if (fs.existsSync(envPath)) {
   let envContent = fs.readFileSync(envPath, "utf8");
+  console.log(".env file size:", envContent.length, "bytes");
+  console.log(".env content raw:", JSON.stringify(envContent.slice(0, 100)) + (envContent.length > 100 ? "..." : ""));
+  
   // Strip UTF-8 BOM if present
   if (envContent.startsWith("\uFEFF")) {
     envContent = envContent.slice(1);

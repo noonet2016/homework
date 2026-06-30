@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
+const { spawn } = require("child_process");
 
 // 1. Load environment variables from .env
 const envPath = path.join(__dirname, "..", ".env");
@@ -25,11 +24,10 @@ if (fs.existsSync(envPath)) {
     }
     process.env[trimmedKey] = value;
   });
+  console.log("Successfully loaded environment variables from .env");
+} else {
+  console.warn(".env file not found at:", envPath);
 }
-
-// 2. Initialize Prisma Client
-const { PrismaClient } = require("../src/generated/prisma/client");
-const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
 
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
@@ -37,30 +35,19 @@ if (!dbUrl) {
   process.exit(1);
 }
 
-const adapter = new PrismaMariaDb(dbUrl);
-const prisma = new PrismaClient({ adapter });
+const username = process.argv[2] || "kru";
+const password = process.argv[3] || "";
 
-async function main() {
-  const username = process.argv[2] || "kru";
-  const password =
-    process.argv[3] || crypto.randomBytes(6).toString("base64url").slice(0, 10);
+console.log(`Running: npx tsx scripts/seed-teacher.ts ${username}...`);
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.upsert({
-    where: { username },
-    create: { username, passwordHash, role: "TEACHER" },
-    update: { passwordHash },
-  });
+const escapedDbUrl = dbUrl.replace(/"/g, '\\"');
+const cmd = `DATABASE_URL="${escapedDbUrl}" npx tsx scripts/seed-teacher.ts "${username}" "${password}"`;
 
-  console.log("=== TEACHER ACCOUNT SEEDED ===");
-  console.log("username:", username);
-  console.log("password:", password);
-  console.log("(login at the teacher-mode button; change later if desired)");
-}
+const child = spawn(cmd, [], {
+  stdio: "inherit",
+  shell: true,
+});
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+child.on("close", (code) => {
+  process.exit(code);
+});

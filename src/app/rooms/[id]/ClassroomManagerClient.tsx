@@ -672,18 +672,18 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
             </div>
 
             {/* Add task */}
-            <form action={handleAddTask} className="flex items-center gap-2 mb-4">
+            <form action={handleAddTask} className="flex items-center gap-1.5 md:gap-2 mb-4">
               <input type="hidden" name="roomId" value={roomId} />
               <input
                 name="name"
-                className="flex-1 border-2 border-indigo-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-indigo-500"
+                className="flex-1 border-2 border-indigo-300 rounded-xl px-2.5 md:px-4 py-2 md:py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-indigo-500 min-w-0"
                 placeholder="ชื่องานใหม่"
                 required
               />
               <input
                 type="number"
                 name="maxScore"
-                className="w-16 md:w-20 border-2 border-indigo-300 rounded-xl px-1 py-2.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-12 md:w-20 border-2 border-indigo-300 rounded-xl px-0.5 py-2 md:py-2.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none shrink-0"
                 placeholder="เต็ม"
                 defaultValue="0"
                 min="0"
@@ -691,7 +691,7 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
               />
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 px-3.5 md:px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700 active:scale-95 transition-transform"
+                className="inline-flex items-center justify-center gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700 active:scale-95 transition-transform"
                 title="เพิ่มงาน"
               >
                 <i className="fa-solid fa-plus" />

@@ -65,11 +65,17 @@ export default async function RoomPage({
         const score = student.scores.find((item) => item.taskId === task.id);
         return {
           taskId: task.id,
-          value: score?.value ?? 0,
+          value: score ? Number(score.value) : 0,
         };
       });
-      const totalScore = scores.reduce((sum, score) => sum + score.value, 0);
-      const tasksCompleted = scores.filter((score) => score.value > 0).length;
+      const totalScore = scores.reduce((sum, s) => {
+        const val = Number(s.value);
+        return sum + (val === -1 ? 0 : val);
+      }, 0);
+      const tasksCompleted = scores.filter((s) => {
+        const val = Number(s.value);
+        return val > 0 || val === -1;
+      }).length;
 
       return {
         id: student.id,

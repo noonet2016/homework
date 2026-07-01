@@ -171,10 +171,13 @@ export default function StudentScoreModal({
                   </div>
                 ))
               )
-            ) : (() => {
-              const scoreMap = Object.fromEntries(student.scores.map((s) => [s.taskId, s.value]));
-              const submitted = tasks.filter((t) => (scoreMap[t.id] ?? 0) > 0);
-              const pending = tasks.filter((t) => (scoreMap[t.id] ?? 0) === 0);
+              ) : (() => {
+                const scoreMap = Object.fromEntries(student.scores.map((s) => [s.taskId, Number(s.value)]));
+                const submitted = tasks.filter((t) => {
+                  const val = scoreMap[t.id] ?? 0;
+                  return val > 0 || val === -1;
+                });
+                const pending = tasks.filter((t) => (scoreMap[t.id] ?? 0) === 0);
               return (
                 <div className="flex flex-row gap-3">
                   <div className="flex-1 bg-green-50 border border-green-200 rounded-2xl p-4">
@@ -185,7 +188,10 @@ export default function StudentScoreModal({
                       <ul className="space-y-1.5">
                         {submitted.map((task) => (
                           <li key={task.id} className="text-sm flex items-center flex-wrap gap-1">
-                            ✅ {task.name} <span className="text-green-700 font-bold">({scoreMap[task.id]})</span>
+                            ✅ {task.name}{" "}
+                            <span className="text-green-700 font-bold">
+                              ({scoreMap[task.id] === -1 ? "📖" : scoreMap[task.id]})
+                            </span>
                             {task.imageUrl && (
                               <button
                                 type="button"

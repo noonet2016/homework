@@ -597,8 +597,8 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                 name="maxScore"
                 className="w-20 border-2 border-indigo-300 rounded-xl px-2 py-2.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="เต็ม"
-                defaultValue="10"
-                min="1"
+                defaultValue="0"
+                min="0"
                 required
               />
               <button type="submit" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700">
@@ -638,11 +638,11 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                   {!taskSelectMode && (
                     <input
                       type="number"
-                      value={task.maxScore ?? 10}
+                      value={task.maxScore ?? 0}
                       onChange={(e) => handleLocalMaxScoreChange(idx, Number(e.target.value) || 0)}
                       placeholder="คะแนนเต็ม"
                       className="w-16 border border-slate-200 rounded-lg px-1.5 py-1.5 text-center text-sm focus:outline-none bg-white focus:ring-2 focus:ring-indigo-400"
-                      min="1"
+                      min="0"
                     />
                   )}
                   {!taskSelectMode && (

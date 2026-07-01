@@ -10,7 +10,7 @@ export async function createTask(formData: FormData) {
   await requireTeacher();
   const roomId = String(formData.get("roomId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  const maxScore = Number(formData.get("maxScore") ?? "10") || 10;
+  const maxScore = Number(formData.get("maxScore") ?? "0") || 0;
   if (!roomId || !name) return;
 
   const last = await prisma.task.findFirst({
@@ -78,7 +78,7 @@ export async function saveTasksBatch(roomId: string, tasks: TaskBatchItem[]) {
         data: {
           name: t.name,
           imageUrl: t.imageUrl,
-          maxScore: Number(t.maxScore) || 10,
+          maxScore: Number(t.maxScore) || 0,
           visible: t.visible,
           taskIndex: t.taskIndex,
         },

@@ -34,6 +34,7 @@ export default async function GradePage({
     by: ["taskId"],
     where: {
       student: { roomId },
+      value: { gt: -1 },
     },
     _max: {
       value: true,

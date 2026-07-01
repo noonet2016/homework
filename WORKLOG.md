@@ -334,11 +334,16 @@ OPEN ITEMS: confirm Plesk SSH/Git access; SESSION_SECRET must be set in prod (el
   - ตรวจพบปัญหาการดึงคะแนนพิเศษ `-1` บนโปรดักชันแล้วแสดงเป็นคำว่า `-1 PT` พร้อมสถานะสีเทา "ยังไม่ส่ง/รอตรวจ"
   - *สาเหตุ*: ตัวรันเชื่อมต่อฐานข้อมูล MySQL/MariaDB (MySQL2 Driver) ของ Phusion Passenger บน Plesk ทำการแปลงค่าคอลัมน์ Float ที่เป็นตัวเลขลบส่งมาเป็นชนิดตัวหนังสือ (String) เช่น `"-1"` เพื่อความปลอดภัยในการป้อนข้อมูล ส่งผลให้เงื่อนไข `=== -1` (แบบเปรียบเทียบชนิดข้อมูลตรงๆ) บนสคริปต์หน้าจอเด็กนักเรียนทำไม่ผ่าน
   - *แนวทางแก้ไข*: แก้ไขไฟล์ [src/app/view/[roomId]/[studentId]/page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/view/%5BroomId%5D/%5BstudentId%5D/page.tsx) และ [src/app/view/[roomId]/[studentId]/StudentStatusClient.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/view/%5BroomId%5D/%5BstudentId%5D/StudentStatusClient.tsx) ให้ทำการแปลงค่าคะแนนด้วยฟังก์ชัน `Number()` ก่อนประมวลผลเช็คเงื่อนไขเสมอ ช่วยแก้ปัญหานี้ได้อย่างครอบคลุมและเสถียร 100%
+- **ปรับปรุงการคำนวณในหน้าห้องเรียนหลัก (Classroom Details Page Calculations)**:
+  - แก้ไขปัญหาจำนวนงานที่ส่งค้างและคะแนนรวมบนการ์ดนักเรียนไม่สอดคล้องเมื่อได้รับคะแนนพิเศษ `-1`
+  - ทำการปรับปรุงโค้ดใน [src/app/rooms/[id]/page.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/rooms/%5Bid%5D/page.tsx) ให้แปลงค่าเป็น `Number` และนับคะแนน `-1` เป็นงานที่ทำสำเร็จแล้ว (ไม่เป็นงานค้าง) โดยที่ไม่หักคะแนนรวม (`totalScore`)
+  - อัปเดต [src/app/rooms/[id]/StudentScoreModal.tsx](file:///Users/kanokkarn/Data/AI%20Title/projects/homework-next/src/app/rooms/[id]/StudentScoreModal.tsx) ให้แสดงสถานะส่งสมุดแล้วเป็นสัญลักษณ์รูปสมุด `📖` แทนที่จะแสดงเป็นคะแนนติดลบดิบๆ ในหน้ารายละเอียดของนักเรียน
 
-- **Commit**: `dc4f043` (เพิ่มตัวซิงค์โคลอน), `0dbd464` (อัปเกรด dependencies tsx), `ea78774` (ย้ายสิทธิ์ config), `0b56b85` (ลบ config เก่า), `e78bde9` (สร้าง config คืนชีพ Prisma 7), `cce44e6` (สคริปต์คู่ขนาน), `b1f67fa` (Inline db URL), `5d222d9` (Placeholder fallback), `f1e5bb9` (นำเข้าไฟล์รูปใบงาน), `5e84800` (คืนค่า redirect คิวรี่จริง), `31c1f8b` (สลับหน้าฝั่ง Client), `6efe324` (เพิ่ม Image Fallback ในหน้าตรวจงานด่วน), `ba1b175` (Checkbox คะแนนด่วน), `8b4b3f1` (ระบบสแกนรับสมุดด่วน & แก้ลำดับประกาศ useEffect), `6cae4b8` (เมนูนำทางบนมือถือ Hamburger Drawer), `a2bee26` (แก้ไขความโปร่งใสและระยะเยื้องของเมนูมือถือ) และ `e4ae336` (แก้ไข MySQL Driver คืนค่า String บนเซิร์ฟเวอร์จริง).
+- **Commit**: `dc4f043` (เพิ่มตัวซิงค์โคลอน), `0dbd464` (อัปเกรด dependencies tsx), `ea78774` (ย้ายสิทธิ์ config), `0b56b85` (ลบ config เก่า), `e78bde9` (สร้าง config คืนชีพ Prisma 7), `cce44e6` (สคริปต์คู่ขนาน), `b1f67fa` (Inline db URL), `5d222d9` (Placeholder fallback), `f1e5bb9` (นำเข้าไฟล์รูปใบงาน), `5e84800` (คืนค่า redirect คิวรี่จริง), `31c1f8b` (สลับหน้าฝั่ง Client), `6efe324` (เพิ่ม Image Fallback ในหน้าตรวจงานด่วน), `ba1b175` (Checkbox คะแนนด่วน), `8b4b3f1` (ระบบสแกนรับสมุดด่วน & แก้ลำดับประกาศ useEffect), `6cae4b8` (เมนูนำทางบนมือถือ Hamburger Drawer), `a2bee26` (แก้ไขความโปร่งใสและระยะเยื้องของเมนูมือถือ), `e4ae336` (แก้ไข MySQL Driver คืนค่า String บนเซิร์ฟเวอร์จริง) และ `09c4e92` (ปรับปรุงการนับสถานะสมุดส่งและคะแนนในหน้ารายละเอียดห้องเรียน).
 
-## ========== CHECKPOINT (2026-07-01, จบภารกิจซิงค์สถานะลบสมุดด่วนสำเร็จ — Hand-off to Rudolf) ==========
-แอปพลิเคชัน Next.js `homework-next` แก้ปัญหาสนับสนุนตัวแปรตัวเลขลบของฐานข้อมูลบนเซิร์ฟเวอร์จริงเรียบร้อย หน้าแสดงผลของเด็กนักเรียนขึ้นตรวจสอบรูปสมุด 📖 ตนเองได้สมบูรณ์แบบ
+## ========== CHECKPOINT (2026-07-01, จบภารกิจซิงค์สถานะสมุดส่งในห้องเรียนสมบูรณ์ — Hand-off to Rudolf) ==========
+แอปพลิเคชัน Next.js `homework-next` อัปเดตตารางนักเรียนและการ์ดคะแนนในหน้าจัดการห้องเรียนให้รับทราบการตรวจสมุดด่วน (-1) สำเร็จเสร็จสมบูรณ์เรียบร้อยแล้ว
+
 
 
 

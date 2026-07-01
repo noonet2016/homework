@@ -663,9 +663,11 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                 type="button"
                 onClick={handleCopyFromRoom}
                 disabled={!sourceRoomId || isSaving}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-violet-700 disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-2 px-3.5 md:px-4 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-violet-700 disabled:opacity-40 active:scale-95 transition-transform"
+                title="คัดลอกจากห้องนี้"
               >
-                <i className="fa-solid fa-copy" /> คัดลอกจากห้องนี้
+                <i className="fa-solid fa-copy" />
+                <span className="hidden md:inline">คัดลอกจากห้องนี้</span>
               </button>
             </div>
 
@@ -681,14 +683,19 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
               <input
                 type="number"
                 name="maxScore"
-                className="w-20 border-2 border-indigo-300 rounded-xl px-2 py-2.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-16 md:w-20 border-2 border-indigo-300 rounded-xl px-1 py-2.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="เต็ม"
                 defaultValue="0"
                 min="0"
                 required
               />
-              <button type="submit" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700">
-                <i className="fa-solid fa-plus" /> เพิ่มงาน
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center gap-2 px-3.5 md:px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700 active:scale-95 transition-transform"
+                title="เพิ่มงาน"
+              >
+                <i className="fa-solid fa-plus" />
+                <span className="hidden md:inline">เพิ่มงาน</span>
               </button>
             </form>
 

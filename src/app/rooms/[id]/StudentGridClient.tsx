@@ -84,6 +84,16 @@ export default function StudentGridClient({
     return () => window.removeEventListener("toggle-select-mode", handler);
   }, []);
 
+  // Listen to force selection changes from outer components (e.g. Select All)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ids = (e as CustomEvent).detail?.ids ?? [];
+      setSelectedIds(ids);
+    };
+    window.addEventListener("force-selection", handler);
+    return () => window.removeEventListener("force-selection", handler);
+  }, []);
+
   // Dispatch selection changes to ClassroomManagerClient
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("selection-changed", { detail: { ids: selectedIds } }));

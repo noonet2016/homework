@@ -4,6 +4,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createStudent, deleteStudent, updateStudent, createStudentsBulk } from "@/lib/actions/students";
 import { createTask, deleteTask, deleteTasksBulk, saveTasksBatch, copyTasksFromRoom, clearTaskScores } from "@/lib/actions/tasks";
+import { saveBulkScores } from "@/lib/actions/scores";
 import { generatePremiumQrDataUrl } from "@/lib/generatePremiumQr";
 import { dualQrCardSvg, dualQrPrintDocument } from "@/lib/dualQrCard";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
@@ -18,11 +19,14 @@ type ClassroomManagerClientProps = {
   rooms: RoomSummary[];
 };
 
-type OpenModal = "sheet" | "tasks" | "addStudent" | "editStudent" | "bulkAdd" | "classQr" | null;
+type OpenModal = "sheet" | "tasks" | "addStudent" | "editStudent" | "bulkAdd" | "classQr" | "bulkGrade" | null;
 
 export default function ClassroomManagerClient({ roomId, roomName, students, tasks, rooms }: ClassroomManagerClientProps) {
   const router = useRouter();
   const [openModal, setOpenModal] = useState<OpenModal>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState(tasks[0]?.id || "");
+  const [scoreValue, setScoreValue] = useState("0");
+  const [isSavingBulk, setIsSavingBulk] = useState(false);
   const [editingStudent, setEditingStudent] = useState<StudentCardData | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -190,14 +194,12 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
     reader.readAsDataURL(file);
   }
 
-async function handleSaveTasks() {
+  async function handleSaveTasks() {
     setIsSaving(true);
     try {
-      await saveTasksBatch(roomId, localTasks.map((t, i) => ({
-        id: t.id, name: t.name, imageUrl: t.imageUrl, visible: t.visible, taskIndex: i + 1,
-      })));
-      router.refresh();
+      await saveTasksBatch(roomId, localTasks);
       close();
+      router.refresh();
     } finally {
       setIsSaving(false);
     }
@@ -207,25 +209,8 @@ async function handleSaveTasks() {
     if (!sourceRoomId) return;
     setIsSaving(true);
     try {
-      const newTasks = await copyTasksFromRoom(roomId, sourceRoomId);
-      if (newTasks && newTasks.length > 0) {
-        setLocalTasks((prev) => [...prev, ...newTasks]);
-      }
-      setSourceRoomId("");
-      router.refresh();
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleBulkDeleteTasks() {
-    if (!selectedTaskIds.length) return;
-    setIsSaving(true);
-    try {
-      await deleteTasksBulk(roomId, selectedTaskIds);
-      setLocalTasks((prev) => prev.filter((t) => !selectedTaskIds.includes(t.id)));
-      setSelectedTaskIds([]);
-      setTaskSelectMode(false);
+      await copyTasksFromRoom(roomId, sourceRoomId);
+      close();
       router.refresh();
     } finally {
       setIsSaving(false);
@@ -239,9 +224,14 @@ async function handleSaveTasks() {
 
   async function confirmClearScores() {
     if (!clearConfirmTask) return;
-    await clearTaskScores(clearConfirmTask.id, roomId);
-    setClearConfirmTask(null);
-    router.refresh();
+    setIsSaving(true);
+    try {
+      await clearTaskScores(clearConfirmTask.id, roomId);
+      setClearConfirmTask(null);
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleDeleteTask(taskId: string) {
@@ -251,17 +241,39 @@ async function handleSaveTasks() {
 
   async function confirmDeleteTask() {
     if (!deleteConfirmTask) return;
-    const fd = new FormData();
-    fd.set("id", deleteConfirmTask.id);
-    fd.set("roomId", roomId);
-    await deleteTask(fd);
-    setLocalTasks((prev) => prev.filter((t) => t.id !== deleteConfirmTask.id));
-    setDeleteConfirmTask(null);
+    setIsSaving(true);
+    try {
+      const fd = new FormData();
+      fd.set("id", deleteConfirmTask.id);
+      fd.set("roomId", roomId);
+      await deleteTask(fd);
+      setLocalTasks((prev) => prev.filter((t) => t.id !== deleteConfirmTask.id));
+      setDeleteConfirmTask(null);
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleAddTask(fd: FormData) {
     await createTask(fd);
     router.refresh();
+  }
+
+
+  async function handleBulkDeleteTasks() {
+    if (selectedTaskIds.length === 0) return;
+    if (!confirm(`ลบใบงานที่เลือก ${selectedTaskIds.length} ชิ้น?`)) return;
+    setIsSaving(true);
+    try {
+      await deleteTasksBulk(roomId, selectedTaskIds);
+      setSelectedTaskIds([]);
+      setTaskSelectMode(false);
+      close();
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleCreateStudent(fd: FormData) {
@@ -350,6 +362,30 @@ async function handleSaveTasks() {
     window.dispatchEvent(new CustomEvent("toggle-select-mode", { detail: { active: false } }));
   }
 
+  async function handleSaveBulk() {
+    if (!selectedTaskId || selectedIds.length === 0) return;
+    setIsSavingBulk(true);
+    try {
+      const val = Number(scoreValue) || 0;
+      await saveBulkScores(roomId, selectedIds, selectedTaskId, val);
+      setIsSelectMode(false);
+      setSelectedIds([]);
+      window.dispatchEvent(new CustomEvent("toggle-select-mode", { detail: { active: false } }));
+      window.dispatchEvent(new CustomEvent("force-selection", { detail: { ids: [] } }));
+      setOpenModal(null);
+      router.refresh();
+      if ((window as any).notify) {
+        (window as any).notify("ให้คะแนนกลุ่มสำเร็จ", "success");
+      }
+    } catch (err) {
+      if ((window as any).notify) {
+        (window as any).notify("เกิดข้อผิดพลาดในการให้คะแนนกลุ่ม", "error");
+      }
+    } finally {
+      setIsSavingBulk(false);
+    }
+  }
+
   return (
     <>
       {/* Trigger button */}
@@ -363,22 +399,57 @@ async function handleSaveTasks() {
         <span className="hidden sm:inline">จัดการห้องเรียน</span>
       </button>
 
-      {/* Delete selected banner */}
+      {/* Delete/Grade selected banner */}
       {isSelectMode && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap bg-slate-100 p-2 rounded-2xl border border-slate-200">
+          <button
+            type="button"
+            onClick={() => {
+              const allIds = students.map((s) => s.id);
+              setSelectedIds(allIds);
+              window.dispatchEvent(new CustomEvent("force-selection", { detail: { ids: allIds } }));
+            }}
+            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition active:scale-95"
+          >
+            ☑️ เลือกทั้งหมด
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedIds([]);
+              window.dispatchEvent(new CustomEvent("force-selection", { detail: { ids: [] } }));
+            }}
+            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition active:scale-95"
+          >
+            ⬜ ล้าง
+          </button>
+          
+          <div className="h-6 w-[1px] bg-slate-300 mx-1 hidden sm:block" />
+
+          <button
+            type="button"
+            onClick={() => setOpenModal("bulkGrade")}
+            disabled={selectedIds.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-4 py-2 text-xs font-black text-white shadow-md shadow-violet-200 hover:bg-violet-700 active:scale-95 disabled:opacity-40"
+          >
+            <i className="fa-solid fa-file-signature" />
+            ให้คะแนนกลุ่ม ({selectedIds.length})
+          </button>
+
           <button
             type="button"
             onClick={handleDeleteSelected}
             disabled={selectedIds.length === 0}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-rose-200 hover:bg-rose-700 active:scale-95 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-black text-white shadow-md shadow-rose-200 hover:bg-rose-700 active:scale-95 disabled:opacity-40"
           >
             <i className="fa-solid fa-user-minus" />
-            ลบที่เลือก ({selectedIds.length})
+            ลบที่เลือก
           </button>
+
           <button
             type="button"
             onClick={toggleSelectMode}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-200 px-4 py-2.5 text-sm font-black text-slate-700 hover:bg-slate-300 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-4 py-2 text-xs font-black text-slate-700 hover:bg-slate-300 active:scale-95"
           >
             <i className="fa-solid fa-xmark" />
             ยกเลิก
@@ -1017,6 +1088,115 @@ async function handleSaveTasks() {
               </button>
               <button type="button" onClick={close} className="px-4 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 font-semibold text-sm hover:bg-rose-100 shadow-sm">
                 <i className="fa-solid fa-xmark mr-1" />ปิด
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Bulk Grade Modal ===== */}
+      {openModal === "bulkGrade" && (
+        <div className="fixed inset-0 z-[100000] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="relative bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl animate-modal-pop">
+            <button
+              type="button"
+              onClick={() => setOpenModal(null)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 text-lg"
+            >
+              ✕
+            </button>
+            
+            <h3 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
+              ✍️ ให้คะแนนกลุ่ม
+            </h3>
+            <p className="text-slate-500 text-xs mb-4">
+              คุณครูกำลังจะให้คะแนนแก่นักเรียน <span className="font-bold text-indigo-600">{selectedIds.length} คน</span> ที่เลือกไว้พร้อมกัน
+            </p>
+
+            <div className="space-y-4">
+              {/* Task Dropdown */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">เลือกชิ้นงาน:</label>
+                <select
+                  value={selectedTaskId}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-sm font-semibold bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  <option value="">-- เลือกชิ้นงาน --</option>
+                  {tasks.map((task) => (
+                    <option key={task.id} value={task.id}>
+                      {task.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Score Input */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">คะแนนที่ต้องการป้อน:</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    value={scoreValue}
+                    onChange={(e) => setScoreValue(e.target.value)}
+                    className="flex-1 border border-slate-200 rounded-xl p-2 text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Helpers */}
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!selectedTaskId) return;
+                    const maxVal = Math.max(...students.map(s => {
+                      const score = s.scores.find(sc => sc.taskId === selectedTaskId);
+                      return score ? Number(score.value) : 0;
+                    }), 10);
+                    setScoreValue(String(maxVal));
+                  }}
+                  disabled={!selectedTaskId}
+                  className="py-2 px-1 text-xs font-bold rounded-xl border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-40"
+                  title="ป้อนคะแนนเต็ม (อ้างอิงจากคะแนนสูงสุดในห้อง หรือเต็ม 10)"
+                >
+                  💯 คะแนนเต็ม
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScoreValue("-1")}
+                  className="py-2 px-1 text-xs font-bold rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                  title="เช็คส่งสมุดด่วน รอตรวจคะแนนภายหลัง"
+                >
+                  📖 ส่งสมุด (-1)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScoreValue("0")}
+                  className="py-2 px-1 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  title="ล้างคะแนนเป็น 0"
+                >
+                  🧹 เคลียร์ (0)
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setOpenModal(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 text-sm"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBulk}
+                disabled={isSavingBulk || !selectedTaskId}
+                className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 disabled:opacity-50 text-sm shadow-lg shadow-indigo-100"
+              >
+                {isSavingBulk ? "กำลังบันทึก..." : "บันทึกคะแนนกลุ่ม"}
               </button>
             </div>
           </div>

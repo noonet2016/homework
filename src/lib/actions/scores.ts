@@ -44,3 +44,26 @@ export async function saveStudentScores(
 
   revalidatePath(`/rooms/${roomId}`);
 }
+
+export async function saveBulkScores(
+  roomId: string,
+  studentIds: string[],
+  taskId: string,
+  value: number,
+) {
+  await requireTeacher();
+  if (!roomId || !studentIds.length || !taskId) return;
+
+  await prisma.$transaction(
+    studentIds.map((studentId) =>
+      prisma.score.upsert({
+        where: { studentId_taskId: { studentId, taskId } },
+        create: { studentId, taskId, value },
+        update: { value },
+      }),
+    ),
+  );
+
+  revalidatePath(`/rooms/${roomId}`);
+}
+

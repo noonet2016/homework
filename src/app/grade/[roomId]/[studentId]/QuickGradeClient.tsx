@@ -63,10 +63,14 @@ export default function QuickGradeClient({
   // Load settings from localStorage on mount
   useEffect(() => {
     const mode = localStorage.getItem(`quick-mode-enabled-${roomId}`) === "true";
-    const taskId = localStorage.getItem(`active-quick-task-${roomId}`);
+    let taskId = localStorage.getItem(`active-quick-task-${roomId}`);
+    const isValidTask = tasks.some((t) => t.id === taskId);
+    if (!isValidTask) {
+      taskId = tasks[0]?.id || null;
+    }
     setQuickCheckActive(mode);
     setActiveTaskId(taskId);
-  }, [roomId]);
+  }, [roomId, tasks]);
 
   const initial = Object.fromEntries(
     tasks.map((t) => {

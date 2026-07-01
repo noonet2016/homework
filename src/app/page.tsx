@@ -49,17 +49,38 @@ export default async function Home() {
   const { isTeacher } = await getSession();
   const rooms = await prisma.room.findMany({
     orderBy: { sortOrder: "asc" },
-    include: { students: { include: { scores: { select: { value: true } } } } },
+    include: {
+      students: { include: { scores: { select: { value: true } } } },
+      tasks: { select: { id: true } },
+    },
   });
 
   const roomStats = rooms.map((room, i) => {
     const studentCount = room.students.length;
+    const taskCount = room.tasks.length;
+    
+    // Total possible homework submissions for this room
+    const totalPossible = studentCount * taskCount;
+    
+    // Count how many total student scores are checked in (value > 0 or value === -1)
+    let totalSubmitted = 0;
+    room.students.forEach((s) => {
+      s.scores.forEach((sc) => {
+        const val = Number(sc.value);
+        if (val > 0 || val === -1) {
+          totalSubmitted++;
+        }
+      });
+    });
+
     const submitted = room.students.filter((s) =>
       s.scores.some((sc) => sc.value !== 0)
     ).length;
     const pending = studentCount - submitted;
+    
     const completion =
-      studentCount > 0 ? Math.round((submitted / studentCount) * 100) : 0;
+      totalPossible > 0 ? Math.round((totalSubmitted / totalPossible) * 100) : 0;
+
     return {
       id: room.id,
       name: room.name,

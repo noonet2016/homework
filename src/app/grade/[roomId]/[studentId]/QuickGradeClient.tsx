@@ -192,9 +192,14 @@ export default function QuickGradeClient({
                     const next = !quickCheckActive;
                     setQuickCheckActive(next);
                     localStorage.setItem(`quick-mode-enabled-${roomId}`, String(next));
-                    if (next && !activeTaskId && tasks.length > 0) {
-                      setActiveTaskId(tasks[0].id);
-                      localStorage.setItem(`active-quick-task-${roomId}`, tasks[0].id);
+                    if (next) {
+                      setHasAutoChecked(student.id); // Prevent immediate auto-save for this student
+                      if (!activeTaskId && tasks.length > 0) {
+                        setActiveTaskId(tasks[0].id);
+                        localStorage.setItem(`active-quick-task-${roomId}`, tasks[0].id);
+                      }
+                    } else {
+                      setHasAutoChecked("");
                     }
                   }}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${

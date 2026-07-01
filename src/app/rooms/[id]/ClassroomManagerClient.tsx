@@ -35,6 +35,7 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
 
   const [quickCheckActive, setQuickCheckActive] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [activeTaskMenuId, setActiveTaskMenuId] = useState<string | null>(null);
 
   // Sync quick check-in settings from localStorage
   useEffect(() => {
@@ -358,6 +359,7 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
   function close() {
     setOpenModal(null);
     setEditingStudent(null);
+    setActiveTaskMenuId(null);
   }
 
   function toggleSelectMode() {
@@ -731,22 +733,79 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                   )}
                   {!taskSelectMode && (
                     <>
-                      <button type="button" title={task.imageUrl ? "แก้ไข URL รูปภาพ" : "ตั้ง URL รูปภาพ"} onClick={() => handleImageUrl(idx)}
-                        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${task.imageUrl ? "bg-blue-100 border-blue-300 text-blue-600" : "bg-blue-50 border-blue-200 text-blue-400"}`}>
-                        <i className="fa-solid fa-image text-xs" />
-                      </button>
-                      <button type="button" title={task.imageUrl ? "ดูรูปใบงาน" : "ยังไม่มีรูปใบงาน"} onClick={() => task.imageUrl && setPreviewImageUrl(task.imageUrl)}
-                        className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${task.imageUrl ? "bg-green-50 border-green-200 text-green-500 hover:bg-green-100 cursor-pointer" : "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed"}`}>
-                        <i className="fa-solid fa-eye text-xs" />
-                      </button>
-                      <button type="button" title="ล้างคะแนนทั้งหมดของงานนี้" onClick={() => handleClearScores(task.id)}
-                        className="w-8 h-8 rounded-lg border bg-amber-50 border-amber-200 text-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-100">
-                        <i className="fa-solid fa-eraser text-xs" />
-                      </button>
-                      <button type="button" onClick={() => handleDeleteTask(task.id)}
-                        className="w-8 h-8 rounded-lg border bg-red-50 border-red-200 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-100">
-                        <i className="fa-solid fa-trash text-xs" />
-                      </button>
+                      {/* Desktop actions: visible on md and up */}
+                      <div className="hidden md:flex items-center gap-1.5 shrink-0">
+                        <button type="button" title={task.imageUrl ? "แก้ไข URL รูปภาพ" : "ตั้ง URL รูปภาพ"} onClick={() => handleImageUrl(idx)}
+                          className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${task.imageUrl ? "bg-blue-100 border-blue-300 text-blue-600" : "bg-blue-50 border-blue-200 text-blue-400"}`}>
+                          <i className="fa-solid fa-image text-xs" />
+                        </button>
+                        <button type="button" title={task.imageUrl ? "ดูรูปใบงาน" : "ยังไม่มีรูปใบงาน"} onClick={() => task.imageUrl && setPreviewImageUrl(task.imageUrl)}
+                          className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${task.imageUrl ? "bg-green-50 border-green-200 text-green-500 hover:bg-green-100 cursor-pointer" : "bg-slate-50 border-slate-200 text-slate-300 cursor-not-allowed"}`}>
+                          <i className="fa-solid fa-eye text-xs" />
+                        </button>
+                        <button type="button" title="ล้างคะแนนทั้งหมดของงานนี้" onClick={() => handleClearScores(task.id)}
+                          className="w-8 h-8 rounded-lg border bg-amber-50 border-amber-200 text-amber-500 flex items-center justify-center shrink-0 hover:bg-amber-100">
+                          <i className="fa-solid fa-eraser text-xs" />
+                        </button>
+                        <button type="button" onClick={() => handleDeleteTask(task.id)}
+                          className="w-8 h-8 rounded-lg border bg-red-50 border-red-200 text-red-500 flex items-center justify-center shrink-0 hover:bg-red-100">
+                          <i className="fa-solid fa-trash text-xs" />
+                        </button>
+                      </div>
+
+                      {/* Mobile actions dropdown menu: visible on mobile, hidden on md */}
+                      <div className="md:hidden relative shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveTaskMenuId(activeTaskMenuId === task.id ? null : task.id);
+                          }}
+                          className="w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 flex items-center justify-center active:scale-95"
+                          title="เมนูคำสั่ง"
+                        >
+                          <i className="fa-solid fa-ellipsis-vertical" />
+                        </button>
+                        {activeTaskMenuId === task.id && (
+                          <>
+                            {/* Backdrop to close the menu on tap outside */}
+                            <div className="fixed inset-0 z-[100]" onClick={() => setActiveTaskMenuId(null)} />
+                            
+                            <div className="absolute right-0 top-9 z-[101] bg-white border border-slate-200/80 rounded-xl shadow-xl p-1.5 min-w-[170px] animate-fade-in flex flex-col gap-1">
+                              <button
+                                type="button"
+                                onClick={() => { setActiveTaskMenuId(null); handleImageUrl(idx); }}
+                                className="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+                              >
+                                <i className="fa-solid fa-image text-blue-500" /> ตั้งค่ารูปใบงาน
+                              </button>
+                              <button
+                                type="button"
+                                disabled={!task.imageUrl}
+                                onClick={() => { if (task.imageUrl) { setActiveTaskMenuId(null); setPreviewImageUrl(task.imageUrl); } }}
+                                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 ${task.imageUrl ? "hover:bg-slate-50 text-slate-700" : "text-slate-300 cursor-not-allowed"}`}
+                              >
+                                <i className="fa-solid fa-eye text-green-500" /> ดูรูปภาพใบงาน
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setActiveTaskMenuId(null); handleClearScores(task.id); }}
+                                className="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center gap-2 text-amber-600"
+                              >
+                                <i className="fa-solid fa-eraser text-amber-500" /> ล้างคะแนนทั้งหมด
+                              </button>
+                              <div className="h-[1px] bg-slate-100 my-0.5" />
+                              <button
+                                type="button"
+                                onClick={() => { setActiveTaskMenuId(null); handleDeleteTask(task.id); }}
+                                className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg hover:bg-red-50 flex items-center gap-2 text-red-600"
+                              >
+                                <i className="fa-solid fa-trash text-red-500" /> ลบใบงานนี้
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>

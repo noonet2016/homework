@@ -32,6 +32,21 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [qrUrls, setQrUrls] = useState<Record<string, { teacher: string; student: string }>>({});
   const [localTasks, setLocalTasks] = useState<TaskData[]>(tasks);
+
+  const [quickCheckActive, setQuickCheckActive] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+
+  // Sync quick check-in settings from localStorage
+  useEffect(() => {
+    const mode = localStorage.getItem(`quick-mode-enabled-${roomId}`) === "true";
+    let taskId = localStorage.getItem(`active-quick-task-${roomId}`);
+    const isValidTask = tasks.some((t) => t.id === taskId);
+    if (!isValidTask) {
+      taskId = tasks[0]?.id || null;
+    }
+    setQuickCheckActive(mode);
+    setActiveTaskId(taskId);
+  }, [roomId, tasks]);
   const [sourceRoomId, setSourceRoomId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [deleteConfirmTask, setDeleteConfirmTask] = useState<{ id: string; name: string } | null>(null);
@@ -403,6 +418,18 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
         <span className="hidden sm:inline">จัดการห้องเรียน</span>
       </button>
 
+      {/* Quick Check-in Active Badge */}
+      {quickCheckActive && activeTaskId && (
+        <div className="inline-flex items-center gap-1.5 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 animate-fade-in shadow-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="hidden md:inline">โหมดตรวจด่วน:</span>
+          <span className="max-w-[120px] truncate underline">{tasks.find((t) => t.id === activeTaskId)?.name}</span>
+        </div>
+      )}
+
       {/* Delete/Grade selected banner */}
       {isSelectMode && (
         <div className="flex items-center gap-2 flex-wrap bg-slate-100 p-2 rounded-2xl border border-slate-200">
@@ -532,6 +559,63 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                 icon="fa-file-arrow-up"
                 label="เพิ่มหลายคน"
               />
+            </div>
+
+            {/* Quick Check-in Settings Panel inside Action Sheet */}
+            <div className="border-t border-slate-100 pt-5 mt-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📖</span>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800">โหมดสแกนตรวจสมุดด่วน</h4>
+                    <p className="text-[10px] text-slate-400">สแกนปุ๊บส่งงานทันที</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !quickCheckActive;
+                    setQuickCheckActive(next);
+                    localStorage.setItem(`quick-mode-enabled-${roomId}`, String(next));
+                    if (next && !activeTaskId && tasks.length > 0) {
+                      setActiveTaskId(tasks[0].id);
+                      localStorage.setItem(`active-quick-task-${roomId}`, tasks[0].id);
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    quickCheckActive ? "bg-indigo-600" : "bg-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      quickCheckActive ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {quickCheckActive && (
+                <div className="flex flex-col gap-1.5 animate-fade-in">
+                  <label htmlFor="quick-task-select" className="text-xs font-bold text-indigo-700">
+                    เลือกชิ้นงานสำหรับเช็คส่งสมุด:
+                  </label>
+                  <select
+                    id="quick-task-select"
+                    value={activeTaskId || ""}
+                    onChange={(e) => {
+                      setActiveTaskId(e.target.value);
+                      localStorage.setItem(`active-quick-task-${roomId}`, e.target.value);
+                    }}
+                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none"
+                  >
+                    {tasks.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} (เต็ม {t.maxScore ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>

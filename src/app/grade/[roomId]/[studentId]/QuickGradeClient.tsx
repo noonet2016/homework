@@ -175,67 +175,14 @@ export default function QuickGradeClient({
 
         {/* Body — scrollable */}
         <div className="p-4 md:p-5 overflow-y-auto min-h-0 bg-slate-50/60 flex-1">
-          {/* Quick-check Settings Panel */}
-          {isTeacher && (
-            <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">📖</span>
-                  <div>
-                    <p className="font-bold text-slate-800">โหมดสแกนตรวจสมุดด่วน</p>
-                    <p className="text-[11px] text-slate-500">สแกนปุ๊บบันทึกส่งงานทันที ไม่ต้องกดเซฟ</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = !quickCheckActive;
-                    setQuickCheckActive(next);
-                    localStorage.setItem(`quick-mode-enabled-${roomId}`, String(next));
-                    if (next) {
-                      setHasAutoChecked(student.id); // Prevent immediate auto-save for this student
-                      if (!activeTaskId && tasks.length > 0) {
-                        setActiveTaskId(tasks[0].id);
-                        localStorage.setItem(`active-quick-task-${roomId}`, tasks[0].id);
-                      }
-                    } else {
-                      setHasAutoChecked("");
-                    }
-                  }}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    quickCheckActive ? "bg-indigo-600" : "bg-slate-200"
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      quickCheckActive ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {quickCheckActive && (
-                <div className="mt-3 border-t border-indigo-100/60 pt-3 flex flex-col gap-1.5 animate-fade-in">
-                  <label htmlFor="quick-task-select" className="text-xs font-bold text-indigo-700">
-                    เลือกชิ้นงานสำหรับเช็คส่งสมุด:
-                  </label>
-                  <select
-                    id="quick-task-select"
-                    value={activeTaskId || ""}
-                    onChange={(e) => {
-                      setActiveTaskId(e.target.value);
-                      localStorage.setItem(`active-quick-task-${roomId}`, e.target.value);
-                    }}
-                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700 focus:border-indigo-500 focus:outline-none"
-                  >
-                    {tasks.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name} (เต็ม {t.maxScore ?? 10})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+          {/* Quick-check Active Banner */}
+          {isTeacher && quickCheckActive && activeTaskId && (
+            <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5 text-xs font-semibold text-emerald-800 flex items-center justify-between gap-2 animate-fade-in">
+              <span className="flex items-center gap-1.5">
+                <span className="animate-pulse">🟢</span>
+                <span>โหมดตรวจสมุดด่วนทำงานอยู่: <span className="font-black underline">{tasks.find((t) => t.id === activeTaskId)?.name}</span></span>
+              </span>
+              <span className="text-[10px] text-slate-500 font-normal">(แก้ไขค่านี้ได้ที่หน้าห้องเรียนหลัก)</span>
             </div>
           )}
 

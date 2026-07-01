@@ -170,6 +170,10 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
     setLocalTasks((prev) => prev.map((t, i) => i === idx ? { ...t, name: value } : t));
   }
 
+  function handleLocalMaxScoreChange(idx: number, value: number) {
+    setLocalTasks((prev) => prev.map((t, i) => i === idx ? { ...t, maxScore: value } : t));
+  }
+
   function handleImageUrl(idx: number) {
     setImagePickerIdx(idx);
     setImagePickerUrl(localTasks[idx].imageUrl ?? "");
@@ -588,6 +592,15 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                 placeholder="ชื่องานใหม่"
                 required
               />
+              <input
+                type="number"
+                name="maxScore"
+                className="w-20 border-2 border-indigo-300 rounded-xl px-2 py-2.5 text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                placeholder="เต็ม"
+                defaultValue="10"
+                min="1"
+                required
+              />
               <button type="submit" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold whitespace-nowrap shrink-0 hover:bg-indigo-700">
                 <i className="fa-solid fa-plus" /> เพิ่มงาน
               </button>
@@ -622,6 +635,16 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                     readOnly={taskSelectMode}
                     className={"flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm min-w-0 focus:outline-none bg-white " + (taskSelectMode ? "cursor-pointer" : "focus:ring-2 focus:ring-indigo-400")}
                   />
+                  {!taskSelectMode && (
+                    <input
+                      type="number"
+                      value={task.maxScore ?? 10}
+                      onChange={(e) => handleLocalMaxScoreChange(idx, Number(e.target.value) || 0)}
+                      placeholder="คะแนนเต็ม"
+                      className="w-16 border border-slate-200 rounded-lg px-1.5 py-1.5 text-center text-sm focus:outline-none bg-white focus:ring-2 focus:ring-indigo-400"
+                      min="1"
+                    />
+                  )}
                   {!taskSelectMode && (
                     <>
                       <button type="button" title={task.imageUrl ? "แก้ไข URL รูปภาพ" : "ตั้ง URL รูปภาพ"} onClick={() => handleImageUrl(idx)}
@@ -1151,15 +1174,13 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                   type="button"
                   onClick={() => {
                     if (!selectedTaskId) return;
-                    const maxVal = Math.max(...students.map(s => {
-                      const score = s.scores.find(sc => sc.taskId === selectedTaskId);
-                      return score ? Number(score.value) : 0;
-                    }), 10);
+                    const selectedTask = localTasks.find((t) => t.id === selectedTaskId);
+                    const maxVal = selectedTask ? Number(selectedTask.maxScore) : 10;
                     setScoreValue(String(maxVal));
                   }}
                   disabled={!selectedTaskId}
                   className="py-2 px-1 text-xs font-bold rounded-xl border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-40"
-                  title="ป้อนคะแนนเต็ม (อ้างอิงจากคะแนนสูงสุดในห้อง หรือเต็ม 10)"
+                  title="ป้อนคะแนนเต็มสำหรับงานนี้"
                 >
                   💯 คะแนนเต็ม
                 </button>

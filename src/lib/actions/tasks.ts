@@ -10,6 +10,7 @@ export async function createTask(formData: FormData) {
   await requireTeacher();
   const roomId = String(formData.get("roomId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
+  const maxScore = Number(formData.get("maxScore") ?? "10") || 10;
   if (!roomId || !name) return;
 
   const last = await prisma.task.findFirst({
@@ -17,7 +18,7 @@ export async function createTask(formData: FormData) {
     orderBy: { taskIndex: "desc" },
   });
   await prisma.task.create({
-    data: { roomId, name, taskIndex: (last?.taskIndex ?? 0) + 1 },
+    data: { roomId, name, maxScore, taskIndex: (last?.taskIndex ?? 0) + 1 },
   });
   revalidatePath(`/rooms/${roomId}`);
 }
@@ -57,11 +58,12 @@ export async function reorderTasks(formData: FormData) {
   revalidatePath("/rooms/" + roomId);
 }
 
-// ── Batch save (rename / imageUrl / visible / taskIndex) ──────────────────────
+// ── Batch save (rename / imageUrl / maxScore / visible / taskIndex) ──────────
 export type TaskBatchItem = {
   id: string;
   name: string;
   imageUrl: string | null;
+  maxScore: number;
   visible: boolean;
   taskIndex: number;
 };
@@ -76,6 +78,7 @@ export async function saveTasksBatch(roomId: string, tasks: TaskBatchItem[]) {
         data: {
           name: t.name,
           imageUrl: t.imageUrl,
+          maxScore: Number(t.maxScore) || 10,
           visible: t.visible,
           taskIndex: t.taskIndex,
         },
@@ -110,6 +113,7 @@ export async function copyTasksFromRoom(roomId: string, sourceRoomId: string) {
           name: t.name,
           taskIndex: ++baseIndex,
           imageUrl: t.imageUrl,
+          maxScore: t.maxScore,
           visible: t.visible,
         },
       }),
@@ -122,6 +126,7 @@ export async function copyTasksFromRoom(roomId: string, sourceRoomId: string) {
     name: t.name,
     taskIndex: t.taskIndex,
     imageUrl: t.imageUrl,
+    maxScore: t.maxScore,
     visible: t.visible,
   }));
 }

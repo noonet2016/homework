@@ -8,6 +8,7 @@ export type TaskData = {
   name: string;
   taskIndex: number;
   imageUrl: string | null;
+  maxScore: number;
   visible: boolean;
 };
 

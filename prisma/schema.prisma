@@ -75,6 +75,7 @@ model Task {
   name      String
   taskIndex Int     @default(0)
   imageUrl  String? @db.MediumText
+  maxScore  Float   @default(10)
   visible   Boolean @default(true)
   scores    Score[]
 

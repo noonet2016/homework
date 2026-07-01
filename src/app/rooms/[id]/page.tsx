@@ -36,6 +36,7 @@ export default async function RoomPage({
           name: true,
           taskIndex: true,
           imageUrl: true,
+          maxScore: true,
           visible: true,
         },
       },
@@ -55,6 +56,7 @@ export default async function RoomPage({
     name: task.name,
     taskIndex: task.taskIndex,
     imageUrl: task.imageUrl,
+    maxScore: Number(task.maxScore),
     visible: task.visible,
   }));
   const taskCount = tasks.length;

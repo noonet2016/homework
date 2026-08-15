@@ -24,6 +24,10 @@ export type StudentCardData = {
   pending: number;
 };
 
+type SortMode = "score" | "number";
+
+const SORT_STORAGE_KEY = "student-grid-sort";
+
 type StudentGridClientProps = {
   roomId: string;
   roomName: string;
@@ -38,6 +42,9 @@ function getStatusIcon(pending: number) {
   return <i className="fa-solid fa-circle-check mini-icon text-emerald-500" />;
 }
 
+// Rank is always the student's standing by score, never their position in the
+// current view — so searching or switching to "เรียงตามเลขที่" cannot hand the
+// crown to whoever happens to sit first on screen.
 function getRankBadge(index: number) {
   if (index === 0) {
     return (
@@ -73,6 +80,19 @@ export default function StudentGridClient({
   const totalAssignedTasks = tasks.length;
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("score");
+
+  // Restore the teacher's last choice after mount (reading localStorage during
+  // render would desync the server HTML and trip hydration).
+  useEffect(() => {
+    const saved = window.localStorage.getItem(SORT_STORAGE_KEY);
+    if (saved === "score" || saved === "number") setSortMode(saved);
+  }, []);
+
+  function changeSortMode(mode: SortMode) {
+    setSortMode(mode);
+    window.localStorage.setItem(SORT_STORAGE_KEY, mode);
+  }
 
   // Listen to select mode toggle event
   useEffect(() => {
@@ -135,18 +155,36 @@ export default function StudentGridClient({
     setSelectedStudent(student);
   }, [students]);
 
+  // `students` arrives already ordered by score (page.tsx), so its index IS the
+  // score rank. Freeze it here before any re-sorting so badges stay stable.
+  const rankById = useMemo(() => {
+    const map = new Map<string, number>();
+    students.forEach((student, index) => map.set(student.id, index));
+    return map;
+  }, [students]);
+
+  const sortedStudents = useMemo(() => {
+    if (sortMode === "score") return students;
+    return [...students].sort((a, b) => {
+      const aNo = a.number ?? Number.MAX_SAFE_INTEGER;
+      const bNo = b.number ?? Number.MAX_SAFE_INTEGER;
+      if (aNo !== bNo) return aNo - bNo;
+      return b.totalScore - a.totalScore;
+    });
+  }, [students, sortMode]);
+
   const filteredStudents = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return students;
+    if (!needle) return sortedStudents;
 
-    return students.filter((student) => {
+    return sortedStudents.filter((student) => {
       const numberText = student.number == null ? "" : String(student.number);
       return [student.name, student.nickname ?? "", numberText]
         .join(" ")
         .toLowerCase()
         .includes(needle);
     });
-  }, [query, students]);
+  }, [query, sortedStudents]);
 
   if (students.length === 0) {
     return (
@@ -163,11 +201,41 @@ export default function StudentGridClient({
 
   return (
     <>
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-slate-500 shrink-0">
+          <i className="fa-solid fa-arrow-down-short-wide mr-1.5 text-slate-400" />
+          เรียงตาม
+        </span>
+        <div className="inline-flex bg-white border border-slate-200 rounded-2xl p-1 shadow-sm">
+          {(
+            [
+              { mode: "score", label: "คะแนน", icon: "fa-medal" },
+              { mode: "number", label: "เลขที่", icon: "fa-list-ol" },
+            ] as const
+          ).map(({ mode, label, icon }) => (
+            <button
+              key={mode}
+              type="button"
+              aria-pressed={sortMode === mode}
+              onClick={() => changeSortMode(mode)}
+              className={`px-3.5 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                sortMode === mode
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-slate-500 hover:text-indigo-600 hover:bg-slate-100"
+              }`}
+            >
+              <i className={`fa-solid ${icon} mr-1.5`} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div
         id="student-grid"
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
       >
-        {filteredStudents.map((student, idx) => {
+        {filteredStudents.map((student) => {
           const pending = Math.max(totalAssignedTasks - Number(student.tasksCompleted || 0), 0);
           const completion =
             totalAssignedTasks > 0
@@ -226,7 +294,7 @@ export default function StudentGridClient({
                     />
                   )}
                   <span className="text-xs font-bold bg-[#eef1ff] px-2 py-1 rounded-full">
-                    {getRankBadge(idx)}
+                    {getRankBadge(rankById.get(student.id) ?? 0)}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">

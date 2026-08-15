@@ -41,8 +41,8 @@ git push origin master
 **Deploy ผ่าน git อย่างเดียวจบ ไม่ต้องอัปโหลด `.next` เอง** — กด Run script `build` บน Plesk
 แล้วผ่านฉลุย ไม่ OOM อย่างที่เคยกลัวไว้ตอนวางแผนเดือนมิถุนายน
 
-⚠️ คอมเมนต์ใน `next.config.ts` ที่เขียนว่า *"build locally, ship the minimal standalone server"*
-**ล้าสมัยแล้วและชวนเข้าใจผิด** — `/.next/` ถูก gitignore อยู่ จึงไม่เคยถูกส่งขึ้น host ทางนี้เลยสักครั้ง
+(คอมเมนต์เดิมใน `next.config.ts` เขียนว่า *"build locally, ship the minimal standalone server"*
+ซึ่งล้าสมัยและชวนเข้าใจผิด — แก้ให้ตรงกับความจริงแล้ว 2026-08-15)
 
 ### Start command
 

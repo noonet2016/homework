@@ -47,3 +47,5 @@ next-env.d.ts
 
 # local data / PII — never commit
 /scratch
+# DB dumps: real student names + teacher password hashes
+/db-backup

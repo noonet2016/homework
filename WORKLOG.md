@@ -433,3 +433,23 @@ OPEN ITEMS: confirm Plesk SSH/Git access; SESSION_SECRET must be set in prod (el
 8. **ความสอดคล้องข้อมูล**: ข้อมูลเกรดใหม่ของภรรยาเทรนเนอร์ ซิงค์เข้าระบบทั้ง Local (เครื่องส่วนตัว) และ Production (Plesk) ตรงกันเรียบร้อย
 
 
+
+## 2026-07-01 — GAS auto-redirect (smart hybrid)
+- Symboli Rudolf (Claude): diagnosed GAS QR-bridge "must click" = browser sandbox `allow-top-navigation-by-user-activation` (not a code bug). Confirmed Next.js side has NO X-Frame-Options/CSP/frame-busting → embeddable. Wrote zero-click smart-hybrid `doGet` (top.location.replace first → 1.2s fallback to inner-frame window.location.replace → big _top button last). File: `docs/gas-doGet-auto-redirect.gs`. To deploy: Trainer pastes over doGet in the Apps Script project the QR points to, then redeploy Web App (new version).
+- Symboli Rudolf (Claude): FIX — framed fallback broke login (app ran inside cross-origin script.google.com iframe → SameSite cookies blocked). Removed inner-frame `window.location.replace` fallback; now top-level only: auto-attempt on load + first-interaction listener (pointerdown/touchstart/click/keydown → topJump) + big _top button. Blocked case = one tap, clean URL, login works. File: `docs/gas-doGet-auto-redirect.gs`.
+- Symboli Rudolf (Claude): VERIFIED by Trainer — after tapping button, URL changes to homework.thatnarai.net (clean top-level) and login works. GAS auto-redirect task CLOSED. Final behavior: best-effort auto top-nav on load + first-interaction listener + one-tap button. Zero-click on desktop Chrome is impossible via GAS (sandbox allow-top-navigation-by-user-activation). Only true zero-click path = reprint QR pointing directly to homework.thatnarai.net/redirect (deferred; Trainer wanted to avoid reprinting).
+
+## ========== CHECKPOINT (2026-07-01, GAS redirect card = rocket theme, pre session-restart) ==========
+Current task: GAS auto-redirect bridge — DONE & verified. Trainer restarting Claude Code session to check if "Sonnet 5" appears in /model menu (Rudolf's known models: Opus 4.8 / Sonnet 4.6 / Haiku 4.5 / Fable 5 — no "Sonnet 5" known; likely a newer build or Sonnet 4.6 relabeled).
+
+State:
+- `docs/gas-doGet-auto-redirect.gs` = FINAL. Smart-hybrid top-level-only redirect (auto top-nav on load + first-interaction listener + big _top button). NO framed fallback (it broke login via cross-origin cookie block). Light-theme card + animated SVG ROCKET (float+vibrate+amber engine-glow, same identity as app Loader.tsx). Trainer approved the design.
+- Preview: `scratch/redirect-card-preview.html` (standalone, matches the .gs card).
+- Earlier version WAS deployed & verified working (tap → homework.thatnarai.net clean URL → login OK). Rocket-theme version NOT yet re-deployed.
+
+Next steps:
+1. Trainer to paste final `doGet` from `docs/gas-doGet-auto-redirect.gs` into the Apps Script project the QR points to → Deploy → NEW VERSION (must be new version, and remove any duplicate doGet).
+2. Scan a QR to confirm rocket card shows + one-tap → clean redirect + login works.
+3. If Trainer switches model: per policy `feedback-opus-vs-sonnet-cost`, keep Opus for UI/design/intent work; Sonnet only for mechanical well-specified edits.
+
+Open questions: Does "Sonnet 5" actually exist in Trainer's /model menu? (confirm on next session)

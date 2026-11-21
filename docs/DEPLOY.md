@@ -71,14 +71,22 @@ npm run db:push     # = node scripts/db-push.js
 ### เอาข้อมูลจาก production ลงมาที่เครื่อง
 
 1. Plesk → phpMyAdmin → export `thatnara_homework` เป็น `.sql`
-2. วางไว้ที่ `db-backup/` (gitignore ไว้แล้ว — มี PII ห้าม commit)
-3. สำรองของเดิมก่อน แล้ว restore:
+2. วางไว้ที่ `db-backup/production/thatnara_homework_YYMMDD_HHMM.sql` (gitignore ไว้แล้ว — มี PII ห้าม commit)
+   — โครงสร้างโฟลเดอร์ดู `db-backup/README.md`
+3. สำรองของเดิมก่อน (`mysqldump ... homework_dev > db-backup/local/homework_dev_pre-restore_YYMMDD_HHMM.sql`) แล้ว restore:
+
+> **ตั้งแต่ 21 พ.ย. 2569 DB ในเครื่องคือ MariaDB 11.8 (Homebrew) พอร์ต 3307** ให้ตรงกับ Plesk (11.8)
+> ไม่ใช่ XAMPP 10.4 ที่พอร์ต 3306 แล้ว (ของเก่ายังอยู่ ใช้กับโปรเจกต์อื่นที่ยังไม่ย้าย)
+> config: `/opt/homebrew/etc/mariadb-11.8.cnf` · datadir: `/opt/homebrew/var/mariadb-11.8` · ไม่ต้อง sudo
+>
+> เปิด server (ยังไม่ได้ตั้งให้เปิดเองตอน login):
+> `cd /opt/homebrew/var/mariadb-11.8 && nohup /opt/homebrew/opt/mariadb@11.8/bin/mariadbd-safe --defaults-file=/opt/homebrew/etc/mariadb-11.8.cnf >/dev/null 2>&1 &`
 
 ```bash
-M=/Applications/XAMPP/xamppfiles/bin/mysql
-$M -u root -h 127.0.0.1 -e "DROP DATABASE IF EXISTS homework_dev;
+m(){ /opt/homebrew/opt/mariadb@11.8/bin/mariadb -u root -h 127.0.0.1 -P 3307 "$@"; }   # zsh: ใช้ function อย่าใส่คำสั่งใน $M
+m -e "DROP DATABASE IF EXISTS homework_dev;
   CREATE DATABASE homework_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-$M -u root -h 127.0.0.1 homework_dev < db-backup/<ไฟล์>.sql
+m homework_dev < db-backup/production/<ไฟล์>.sql
 ```
 
 > ต้อง drop/create ก่อน เพราะ dump ของ phpMyAdmin **ไม่มี `DROP TABLE IF EXISTS`**

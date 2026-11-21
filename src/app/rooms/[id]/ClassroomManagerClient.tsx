@@ -8,6 +8,7 @@ import { saveBulkScores } from "@/lib/actions/scores";
 import { generatePremiumQrDataUrl } from "@/lib/generatePremiumQr";
 import { dualQrCardSvg, dualQrPrintDocument } from "@/lib/dualQrCard";
 import type { StudentCardData, TaskData } from "./StudentGridClient";
+import MoveStudentModal from "./MoveStudentModal";
 
 type RoomSummary = { id: string; name: string; icon: string | null };
 
@@ -53,6 +54,7 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
   const [deleteConfirmTask, setDeleteConfirmTask] = useState<{ id: string; name: string } | null>(null);
   const [clearConfirmTask, setClearConfirmTask] = useState<{ id: string; name: string } | null>(null);
   const [deleteConfirmStudent, setDeleteConfirmStudent] = useState<{ id: string; name: string } | null>(null);
+  const [movingStudentId, setMovingStudentId] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [imagePickerIdx, setImagePickerIdx] = useState<number | null>(null);
   const [imagePickerUrl, setImagePickerUrl] = useState("");
@@ -902,6 +904,13 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
                 >
                   <i className="fa-solid fa-trash-can mr-1" />ลบนักเรียน
                 </button>
+                <button
+                  type="button"
+                  onClick={() => { setMovingStudentId(editingStudent.id); close(); }}
+                  className="px-4 py-2 rounded bg-violet-600 hover:bg-violet-700 text-white font-semibold shadow-sm"
+                >
+                  <i className="fa-solid fa-right-left mr-1" />ย้ายห้อง
+                </button>
                 <button type="button" onClick={() => setEditingStudent(null)} className="px-4 py-2 rounded border border-rose-200 bg-rose-50 text-rose-600 font-semibold hover:bg-rose-100 shadow-sm">
                   <i className="fa-solid fa-xmark mr-1" />ยกเลิก
                 </button>
@@ -940,6 +949,11 @@ export default function ClassroomManagerClient({ roomId, roomName, students, tas
             </form>
           )}
         </div>
+      )}
+
+      {/* ===== Move Student Modal ===== */}
+      {movingStudentId && (
+        <MoveStudentModal studentId={movingStudentId} onClose={() => setMovingStudentId(null)} />
       )}
 
       {/* ===== Image Picker Modal (upload file OR enter URL) ===== */}

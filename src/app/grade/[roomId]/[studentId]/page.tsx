@@ -10,7 +10,7 @@ export default async function GradePage({
 }: {
   params: Promise<{ roomId: string; studentId: string }>;
 }) {
-  const { roomId, studentId } = await params;
+  const { studentId } = await params;
   const { isTeacher } = await getSession();
 
   const student = await prisma.student.findUnique({
@@ -21,7 +21,10 @@ export default async function GradePage({
     },
   });
 
-  if (!student || student.roomId !== roomId) notFound();
+  if (!student) notFound();
+  // Use the student's CURRENT room, not the one in the URL: a student moved to another room
+  // (moveStudent) keeps the same id, so QR codes printed before the move still resolve.
+  const roomId = student.roomId;
 
   const tasks = await prisma.task.findMany({
     where: { roomId },
